@@ -26,16 +26,16 @@ const Landing = () => {
   return (
     <main className="min-h-screen bg-gradient-to-b from-secondary/40 via-background to-background">
       <Helmet>
-        <title>THE GATE® — Your Civic Gateway to Nigerian Government Services</title>
+        <title>THE GATE® — Civic Gateway to Nigerian Government</title>
         <meta name="description" content="Find the right Nigerian MDA for complaints, requests, enquiries, reporting, applications and registrations across the 774 LGAs." />
-        <link rel="canonical" href="https://connect-lga.lovable.app/" />
-        <meta property="og:title" content="THE GATE® — Your Civic Gateway to Nigerian Government Services" />
+        <link rel="canonical" href="https://thegate774app.lovable.app/" />
+        <meta property="og:title" content="THE GATE® — Civic Gateway to Nigerian Government" />
         <meta property="og:description" content="Connect with the right Ministry, Department or Agency across the 774 LGAs + 6 Area Councils." />
-        <meta property="og:url" content="https://connect-lga.lovable.app/" />
+        <meta property="og:url" content="https://thegate774app.lovable.app/" />
       </Helmet>
       <header className="container py-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="THE GATE®" className="h-10 w-10 rounded-full" />
+          <img src={logo} alt="" aria-hidden="true" className="h-10 w-10 rounded-full" />
           <span className="font-heading font-semibold text-lg">THE GATE®</span>
         </div>
         <button
@@ -61,6 +61,7 @@ const Landing = () => {
       </section>
 
       <section className="container max-w-6xl pb-24">
+        <h2 className="sr-only">Choose a civic action</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {ACTION_TYPES.map((a) => (
             <ActionCard

@@ -46,10 +46,10 @@ export default function Onboarding() {
       <Helmet>
         <title>Tell us about yourself — THE GATE®</title>
         <meta name="description" content="Provide your basic identity and location so THE GATE® can route your civic matter to the correct Nigerian authority." />
-        <link rel="canonical" href={`https://connect-lga.lovable.app/start/${action ?? ""}`} />
+        <link rel="canonical" href={`https://thegate774app.lovable.app/start/${action ?? ""}`} />
         <meta property="og:title" content="Tell us about yourself — THE GATE®" />
         <meta property="og:description" content="A quick step before we route your civic matter — no account, no password." />
-        <meta property="og:url" content={`https://connect-lga.lovable.app/start/${action ?? ""}`} />
+        <meta property="og:url" content={`https://thegate774app.lovable.app/start/${action ?? ""}`} />
       </Helmet>
       <div className="max-w-2xl mx-auto">
         <button
@@ -83,7 +83,7 @@ export default function Onboarding() {
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
-                <StatePicker label="State of Origin" value={form.originState} onChange={(v) => setForm({ ...form, originState: v })} />
+                <StatePicker id="originState" label="State of Origin" value={form.originState} onChange={(v) => setForm({ ...form, originState: v })} />
                 <div className="space-y-2">
                   <Label htmlFor="originLga">LGA of Origin</Label>
                   <Input id="originLga" value={form.originLga} onChange={(e) => setForm({ ...form, originLga: e.target.value })} />
@@ -91,7 +91,7 @@ export default function Onboarding() {
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
-                <StatePicker label="State of Residence" value={form.residenceState} onChange={(v) => setForm({ ...form, residenceState: v })} />
+                <StatePicker id="residenceState" label="State of Residence" value={form.residenceState} onChange={(v) => setForm({ ...form, residenceState: v })} />
                 <div className="space-y-2">
                   <Label htmlFor="residenceLga">LGA of Residence</Label>
                   <Input id="residenceLga" value={form.residenceLga} onChange={(e) => setForm({ ...form, residenceLga: e.target.value })} />
@@ -109,12 +109,12 @@ export default function Onboarding() {
   );
 }
 
-function StatePicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function StatePicker({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+        <SelectTrigger id={id} aria-label={label}><SelectValue placeholder="Select state" /></SelectTrigger>
         <SelectContent className="max-h-64">
           {NIGERIA_STATES.map((s) => (
             <SelectItem key={s} value={s}>{s}</SelectItem>

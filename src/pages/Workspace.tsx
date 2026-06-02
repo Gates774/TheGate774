@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Send, Loader2, CheckCircle2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -127,10 +128,10 @@ export default function Workspace() {
       <Helmet>
         <title>{`${meta?.label ?? "Workspace"} — THE GATE®`}</title>
         <meta name="description" content={`${meta?.desc ?? "Submit your civic matter to THE GATE®."} Routed to the responsible Nigerian authority.`} />
-        <link rel="canonical" href={`https://connect-lga.lovable.app/workspace/${action}`} />
+        <link rel="canonical" href={`https://thegate774app.lovable.app/workspace/${action}`} />
         <meta property="og:title" content={`${meta?.label ?? "Workspace"} — THE GATE®`} />
         <meta property="og:description" content={meta?.desc ?? "Submit your civic matter to THE GATE®."} />
-        <meta property="og:url" content={`https://connect-lga.lovable.app/workspace/${action}`} />
+        <meta property="og:url" content={`https://thegate774app.lovable.app/workspace/${action}`} />
       </Helmet>
       <div className="max-w-3xl mx-auto space-y-6">
         <button
@@ -152,7 +153,10 @@ export default function Workspace() {
 
         <Card>
           <CardContent className="pt-6 space-y-4">
+            <Label htmlFor="matter" className="sr-only">Describe your matter</Label>
             <Textarea
+              id="matter"
+              aria-label="Describe your matter"
               placeholder={placeholderFor(action)}
               value={content}
               onChange={(e) => setContent(e.target.value)}
