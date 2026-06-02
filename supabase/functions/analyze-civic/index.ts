@@ -1,9 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { CIVIC_GUIDE } from "./civic_guide.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-
-// Load the Civic Action Guide bundled with this function as the sole knowledge base.
-const CIVIC_GUIDE = await Deno.readTextFile(new URL("./civic_guide.txt", import.meta.url));
 
 const SYSTEM_PROMPT = `You are the Nigerian Civic Actions Assistant. Your SOLE knowledge base and framework is the "Nigerian Citizen's Civic Action Guide" (provided below), which is grounded in the 1999 Constitution of the Federal Republic of Nigeria (as amended). You must never invent agencies, laws, procedures, or contacts that are not in the guide.
 
