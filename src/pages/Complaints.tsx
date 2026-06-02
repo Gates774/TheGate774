@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Loader2, Send, Sparkles, RotateCcw } from "lucide-react";
+import { Loader2, Send, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
+import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { AutosuggestTextarea } from "@/components/civic/AutosuggestTextarea";
 import { VoiceRecorder } from "@/components/civic/VoiceRecorder";
 import { ComplaintReportCard, type ComplaintAnalysis } from "@/components/civic/ComplaintReportCard";
@@ -74,11 +75,7 @@ export default function Complaints() {
         <link rel="canonical" href="https://thegate774app.lovable.app/complaints" />
       </Helmet>
 
-      <ModuleHeader
-        eyebrow="Module 01 · Complaints"
-        title="Lodge a Complaint"
-        description="Tell us what went wrong. THE GATE® will identify the exact tier of government responsible — Federal, State, or LGA — and give you a clear, constitutional action plan."
-      />
+      <ModuleHeader eyebrow="Module 01 · Complaints" title="Lodge a Complaint" />
 
       <section className="container max-w-3xl py-10 space-y-8">
         {!analysis && !noMatch && (
@@ -153,11 +150,6 @@ export default function Complaints() {
                 {loading ? "Analysing with THE GATE® AI…" : "Generate my complaint report"}
               </Button>
             </div>
-
-            <p className="flex items-center gap-2 text-xs text-muted-foreground/90">
-              <Sparkles className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
-              Grounded in the 1999 Constitution and the Nigerian Civic Action Guide.
-            </p>
           </div>
         )}
 
@@ -186,9 +178,7 @@ export default function Complaints() {
         )}
       </section>
 
-      <footer className="container py-10 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} THE GATE® · Civic engagement for the 774 LGAs + 6 Area Councils
-      </footer>
+      <ModuleFooter />
     </main>
   );
 }
