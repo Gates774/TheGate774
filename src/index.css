@@ -1,0 +1,270 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Gate774 Design System - Civic Green & Nigerian Identity */
+
+@layer base {
+  :root {
+    /* Core Civic Green Palette */
+    --civic-green: 154 56% 24%;
+    --civic-green-light: 154 45% 35%;
+    --civic-green-dark: 154 60% 18%;
+    --civic-green-glow: 154 50% 45%;
+    
+    /* Primary - Civic Green */
+    --primary: 154 56% 24%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Background & Surfaces */
+    --background: 0 0% 98%;
+    --foreground: 220 20% 12%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 12%;
+    
+    /* Secondary - Light Green Tint */
+    --secondary: 154 25% 95%;
+    --secondary-foreground: 154 56% 24%;
+    
+    /* Muted - Neutral Gray */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 46%;
+    
+    /* Accent - Warm Gold */
+    --accent: 45 90% 50%;
+    --accent-foreground: 220 20% 12%;
+    
+    /* Alert Colors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 20% 12%;
+    
+    --info: 210 100% 50%;
+    --info-foreground: 0 0% 100%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 154 56% 24%;
+    
+    --radius: 0.875rem;
+    
+    /* Sidebar */
+    --sidebar-width: 280px;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 12%;
+    --sidebar-primary: 154 56% 24%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 154 25% 95%;
+    --sidebar-accent-foreground: 154 56% 24%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 154 56% 24%;
+    
+    /* Gradients */
+    --gradient-civic: linear-gradient(135deg, hsl(154 56% 24%), hsl(154 45% 35%));
+    --gradient-civic-hover: linear-gradient(135deg, hsl(154 60% 18%), hsl(154 56% 24%));
+    --gradient-hero: linear-gradient(180deg, hsl(154 56% 24%) 0%, hsl(154 45% 35%) 50%, hsl(154 30% 45%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(154 20% 98%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-elevated: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-civic: 0 4px 20px -4px hsl(154 56% 24% / 0.3);
+  }
+
+  .dark {
+    --primary: 154 50% 45%;
+    --primary-foreground: 220 20% 12%;
+    
+    --background: 220 20% 8%;
+    --foreground: 0 0% 95%;
+    
+    --card: 220 18% 12%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 220 18% 12%;
+    --popover-foreground: 0 0% 95%;
+    
+    --secondary: 154 30% 15%;
+    --secondary-foreground: 154 50% 70%;
+    
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 60%;
+    
+    --accent: 45 85% 45%;
+    --accent-foreground: 220 20% 12%;
+    
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 154 50% 45%;
+    
+    --sidebar-background: 220 18% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 154 50% 45%;
+    --sidebar-primary-foreground: 220 20% 12%;
+    --sidebar-accent: 154 30% 15%;
+    --sidebar-accent-foreground: 154 50% 70%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 154 50% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold tracking-tight;
+  }
+
+  /* Remove ALL focus rings globally - aggressive approach */
+  *:focus,
+  *:focus-visible,
+  *:focus-within {
+    outline: none !important;
+    outline-width: 0 !important;
+    outline-style: none !important;
+    box-shadow: none !important;
+    ring-width: 0 !important;
+  }
+  
+  a, button, [role="button"], [tabindex] {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  a:focus, a:focus-visible, a:active,
+  button:focus, button:focus-visible, button:active,
+  [role="button"]:focus, [role="button"]:focus-visible,
+  [tabindex]:focus, [tabindex]:focus-visible {
+    outline: none !important;
+    outline-width: 0 !important;
+    box-shadow: none !important;
+    ring: none !important;
+  }
+}
+
+@layer components {
+  /* Civic Button Gradient */
+  .btn-civic {
+    @apply relative overflow-hidden bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-medium;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-civic:hover {
+    @apply shadow-lg;
+    background: linear-gradient(135deg, hsl(var(--civic-green-dark)), hsl(var(--civic-green)));
+  }
+  
+  /* Card Styling */
+  .card-civic {
+    @apply bg-card rounded-[14px] border border-border;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  
+  .card-civic:hover {
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
+  }
+  
+  /* Gradient Text */
+  .text-gradient-civic {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-civic);
+  }
+  
+  /* Status Badge Variants */
+  .badge-submitted {
+    @apply bg-info/10 text-info border border-info/20;
+  }
+  
+  .badge-review {
+    @apply bg-warning/10 text-warning border border-warning/20;
+  }
+  
+  .badge-resolved {
+    @apply bg-success/10 text-success border border-success/20;
+  }
+  
+  .badge-escalated {
+    @apply bg-destructive/10 text-destructive border border-destructive/20;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar Styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  /* Hide scrollbar completely */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Animation Utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}

@@ -1,0 +1,17 @@
+# Gate774
+
+> Gate774 (THE GATE®) is a civic engagement platform connecting Nigerian citizens with the right Ministry, Department or Agency for complaints, requests, enquiries, reporting, applications and registrations across the 774 LGAs + 6 Area Councils.
+
+## Pages
+
+- [Home](/): Choose a civic action — complaints, requests, enquiries, reporting, applications, registrations.
+- [Start a complaint](/start/complaints): Provide identity and location to file a complaint to the responsible authority.
+- [Start a request](/start/request): Request a government service (e.g. Legal Aid, PCC, Scholarships).
+- [Start an enquiry](/start/enquiries): Ask for information about a government service or process.
+- [Start a report](/start/reporting): Report misconduct to bodies like EFCC, ICPC, SON.
+- [Start an application](/start/application): Apply for JAMB, licenses, international passport and similar services.
+- [Start a registration](/start/registration): Register for NIN, NHIS, Voters Card, Pensions and similar.
+
+## Optional
+
+- [Admin](/admin): Internal admin entry (not for public crawling).
