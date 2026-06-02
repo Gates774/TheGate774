@@ -50,13 +50,8 @@ const Landing = () => {
           Universal Participation · The Collectives
         </div>
         <h1 className="font-heading text-4xl md:text-6xl font-semibold tracking-tight">
-          THE GATE® — <span className="text-gradient-civic">Your Civic Gateway</span> to Nigerian Government Services
+          Hello! What do you want to do now
         </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
-          Find the right Ministry, Department or Agency for any civic action — from
-          registration and applications to complaints and reporting. Powered by an AI
-          that understands the Nigerian Constitution.
-        </p>
       </section>
 
       <section className="container max-w-6xl pb-24">
