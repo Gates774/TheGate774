@@ -10,7 +10,7 @@ import { ComplaintReportCard, type ComplaintAnalysis } from "@/components/civic/
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_TOPICS } from "@/data/complaintTopics";
-import { NIGERIAN_STATES_AND_LGAS } from "@/data/nigeriaLgas";
+import { NIGERIA_LGAS } from "@/data/nigeriaLgas";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Complaints() {
@@ -21,9 +21,8 @@ export default function Complaints() {
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
   const [noMatch, setNoMatch] = useState(false);
 
-  const lgas = residenceState
-    ? NIGERIAN_STATES_AND_LGAS.find((s) => s.state === residenceState)?.lgas ?? []
-    : [];
+  const states = Object.keys(NIGERIA_LGAS);
+  const lgas = residenceState ? NIGERIA_LGAS[residenceState] ?? [] : [];
 
   const reset = () => {
     setAnalysis(null);
@@ -100,8 +99,8 @@ export default function Complaints() {
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent className="max-h-72">
-                    {NIGERIAN_STATES_AND_LGAS.map((s) => (
-                      <SelectItem key={s.state} value={s.state}>{s.state}</SelectItem>
+                    {states.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
