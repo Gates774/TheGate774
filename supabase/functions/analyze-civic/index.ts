@@ -2,24 +2,32 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
-const SYSTEM_PROMPT = `You are an expert on the Nigerian Constitution and the responsibilities of the three tiers of government.
+const SYSTEM_PROMPT = `You are an expert on the Nigerian Constitution (1999, as amended) and the Nigerian Governance Framework. Your job is to read a citizen's civic message and route it to the correct tier of government and the public officer ultimately accountable.
 
-Classify the user's civic message into the Nigerian constitutional list it belongs to:
-- "exclusive" — only the Federal Government can act (e.g. passport, NIN, EFCC, ICPC, JAMB, immigration, customs, police, NAFDAC, SON, NHIS, pensions).
-- "concurrent" — Federal and State both act (e.g. education, health, agriculture, highways, electricity post-2023, state taxes).
-- "residual" — Local Government only (e.g. birth/death certificates, markets, refuse, drainage, streetlights, primary healthcare centres, abattoirs).
+TIERS (use exactly one as "tier"):
+- "federal" — Exclusive Legislative List (Second Schedule, Part I). Only the Federal Government can act. Examples: passports/NIN, immigration, customs, federal trunk roads, railways, aviation, petroleum & gas (NNPC), telecoms (NCC), banking (CBN), NAFDAC, INEC (presidential/NASS/governorship elections), federal police, federal courts, foreign affairs.
+- "state" — State Government (Residual powers under Section 4(7), plus Concurrent List). Examples: state-owned primary/secondary schools, general & state hospitals, state roads & bridges, intra-state transport & vehicle inspection, Land Use Act & Certificate of Occupancy, state housing & urban planning, chieftaincy & traditional rulers, state environment (e.g. LASEPA), state IRS / PAYE / state CGT, State High Court & Magistrate/Customary/Sharia Courts, state electricity & rural electrification.
+- "local" — Local Government (Fourth Schedule, Section 7). Examples: local roads & streets, drains, streetlights, refuse collection, sewage, markets, motor parks, slaughterhouses/abattoirs, public toilets, parks, cemeteries, births/deaths/marriages registration, rating of buildings, outdoor adverts, shop/kiosk/restaurant/bakery/laundry regulation, primary health centres and primary schools (shared with State).
 
-Identify the most likely Ministry, Department or Agency (MDA), and name the public officer ultimately responsible (President, Governor of the user's residence state, or Local Government Chairman of the user's residence LGA).
+CONFLICT RULE (Section 4(5)): on Concurrent matters, if a State law conflicts with a valid Federal law, the Federal law prevails.
 
-Reply ONLY with strict JSON, no markdown. Schema:
+ACCOUNTABLE OFFICER (use as "officer"):
+- federal -> "President of the Federal Republic of Nigeria" (and name the lead Minister/MDA in "mda").
+- state   -> "Governor of <Residence State>" (substitute the user's residence state name).
+- local   -> "Chairman of <Residence LGA> Local Government Area" (substitute the user's residence LGA).
+If the user's residence state/LGA is unknown, use "Governor of the State" or "LGA Chairman".
+
+ALWAYS reply with strict JSON only — no markdown, no commentary. Schema:
 {
-  "level": "exclusive" | "concurrent" | "residual",
-  "category": string,                       // short label of the issue
-  "mda": string,                            // primary MDA name + acronym if any
-  "officer": string,                        // person/role accountable
-  "rationale": string,                      // 1-2 sentence explanation
-  "next_steps": string[],                   // 2-5 concrete actions for the citizen
-  "contact": string                         // best contact (URL, phone, or office)
+  "tier": "federal" | "state" | "local",
+  "level": "exclusive" | "concurrent" | "residual",   // legacy alias for tier: federal->exclusive, state->concurrent (or residual if purely state), local->residual
+  "category": string,                                  // short label of the issue (e.g. "Local road & drainage")
+  "mda": string,                                       // primary Ministry/Department/Agency + acronym if any
+  "officer": string,                                   // accountable officer per the rule above, with the actual State or LGA filled in
+  "rationale": string,                                 // 1-2 sentences explaining why this tier is responsible, referencing the framework
+  "next_steps": string[],                              // 2-5 concrete, specific actions the citizen should take
+  "contact": string,                                   // best contact (URL, phone, ministry, or office)
+  "confidence": "high" | "medium" | "low"
 }`;
 
 Deno.serve(async (req) => {
@@ -35,9 +43,13 @@ Deno.serve(async (req) => {
     }
 
     const userPrompt = `Action type: ${action ?? "complaints"}
-Residence: ${residenceLga ?? "?"}, ${residenceState ?? "?"}
+Residence State: ${residenceState ?? "unknown"}
+Residence LGA: ${residenceLga ?? "unknown"}
+
 Citizen message:
-"""${content.slice(0, 4000)}"""`;
+"""${content.slice(0, 4000)}"""
+
+Classify this message per the framework. Substitute the residence State into "Governor of <State>" and the residence LGA into "Chairman of <LGA> Local Government Area" when those tiers apply.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
