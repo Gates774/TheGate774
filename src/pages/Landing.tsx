@@ -30,7 +30,8 @@ const Landing = () => {
   const navigate = useNavigate();
   const go = (id: string) => {
     if (id === "complaints") navigate("/complaints");
-    else toast("This module ships in the next phase. Complaints is live now.");
+    else if (id === "request") navigate("/requests");
+    else toast("This module ships in the next phase.");
   };
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">

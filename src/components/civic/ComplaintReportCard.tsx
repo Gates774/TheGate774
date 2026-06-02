@@ -36,7 +36,13 @@ const TIER_META = {
   local: { label: "Local Government Area", icon: MapPin, accent: "LGA" },
 } as const;
 
-export function ComplaintReportCard({ analysis }: { analysis: ComplaintAnalysis }) {
+export function ComplaintReportCard({
+  analysis,
+  eyebrow = "Your Complaint Report",
+}: {
+  analysis: ComplaintAnalysis;
+  eyebrow?: string;
+}) {
   const tier = (analysis.tier as keyof typeof TIER_META) ?? "state";
   const meta = TIER_META[tier] ?? TIER_META.state;
   const Icon = meta.icon;
@@ -53,7 +59,7 @@ export function ComplaintReportCard({ analysis }: { analysis: ComplaintAnalysis 
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1.5">
-            <span className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground font-medium">Your Complaint Report</span>
+            <span className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground font-medium">{eyebrow}</span>
             {analysis.confidence && (
               <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
                 {analysis.confidence} confidence
