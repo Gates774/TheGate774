@@ -1,4 +1,6 @@
 import { Helmet } from "react-helmet-async";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   MessageSquareWarning,
   HandHelping,
@@ -21,6 +23,11 @@ const ICONS = {
 } as const;
 
 const Landing = () => {
+  const navigate = useNavigate();
+  const go = (id: string) => {
+    if (id === "complaints") navigate("/complaints");
+    else toast("This module ships in the next phase. Complaints is live now.");
+  };
   return (
     <main className="min-h-screen bg-gradient-to-b from-secondary/40 via-background to-background">
       <Helmet>
@@ -62,7 +69,7 @@ const Landing = () => {
               label={a.label}
               desc={a.desc}
               icon={ICONS[a.id]}
-              onClick={() => {}}
+              onClick={() => go(a.id)}
             />
           ))}
         </div>
