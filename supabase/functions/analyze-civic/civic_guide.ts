@@ -1,4 +1,4 @@
-# Document parsed from: Nigerian_Civic_Action_Guide.docx
+export const CIVIC_GUIDE = `# Document parsed from: Nigerian_Civic_Action_Guide.docx
 
 # NIGERIAN CITIZEN'S CIVIC ACTION GUIDE
 
@@ -1804,54 +1804,55 @@ Six ways every Nigerian citizen can engage their government
 Constitution of the Federal Republic of Nigeria, 1999 (as amended) | Prepared for civic education
 
 ### Extracted images (51):
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_1.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_10.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_10_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_10_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_11.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_11_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_12.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_12_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_13.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_13_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_13_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_14.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_14_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_15.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_15_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_16.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_16_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_17.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_17_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_17_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_18.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_18_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_18_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_19.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_19_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_19_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_20.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_20_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_21.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_21_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_22.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_22_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_3.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_3_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_4.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_4_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_4_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_5.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_5_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_5_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_6.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_6_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_7.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_7_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_8.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_8_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_8_table_2_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_9.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_9_table_1_v2.jpg`
-- `parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_9_table_2_v2.jpg`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_1.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_10.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_10_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_10_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_11.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_11_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_12.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_12_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_13.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_13_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_13_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_14.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_14_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_15.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_15_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_16.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_16_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_17.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_17_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_17_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_18.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_18_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_18_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_19.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_19_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_19_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_20.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_20_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_21.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_21_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_22.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_22_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_3.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_3_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_4.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_4_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_4_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_5.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_5_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_5_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_6.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_6_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_7.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_7_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_8.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_8_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_8_table_2_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_9.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_9_table_1_v2.jpg\`
+- \`parsed-documents://20260602-225849-115388/Nigerian_Civic_Action_Guide.docx/images/page_9_table_2_v2.jpg\`
+`;
