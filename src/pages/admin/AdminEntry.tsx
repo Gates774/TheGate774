@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,15 @@ export default function AdminEntry() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Helmet>
+        <title>Admin Access — THE GATE®</title>
+        <meta name="description" content="Restricted administrator entry for THE GATE® civic engagement platform." />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://thegate774app.lovable.app/admin" />
+        <meta property="og:title" content="Admin Access — THE GATE®" />
+        <meta property="og:description" content="Restricted administrator entry for THE GATE®." />
+        <meta property="og:url" content="https://thegate774app.lovable.app/admin" />
+      </Helmet>
       <Card className="w-full max-w-md border-border/60 shadow-lg">
         <CardHeader className="text-center space-y-3">
           <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">

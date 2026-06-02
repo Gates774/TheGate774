@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Loader2, LogOut, RefreshCw, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -91,6 +92,15 @@ export default function AdminInbox() {
 
   return (
     <main className="min-h-screen bg-muted/30">
+      <Helmet>
+        <title>Admin Inbox — THE GATE®</title>
+        <meta name="description" content="Review and route citizen submissions on THE GATE® civic engagement platform." />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://thegate774app.lovable.app/admin/inbox" />
+        <meta property="og:title" content="Admin Inbox — THE GATE®" />
+        <meta property="og:description" content="Internal admin inbox for THE GATE®." />
+        <meta property="og:url" content="https://thegate774app.lovable.app/admin/inbox" />
+      </Helmet>
       <header className="border-b border-border bg-background sticky top-0 z-10">
         <div className="container py-4 flex items-center justify-between">
           <div>

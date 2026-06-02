@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://connect-lga.lovable.app/sitemap.xml
+Sitemap: https://thegate774app.lovable.app/sitemap.xml
