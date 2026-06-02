@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   MessageSquareWarning,
@@ -22,7 +21,6 @@ const ICONS = {
 } as const;
 
 const Landing = () => {
-  const navigate = useNavigate();
   return (
     <main className="min-h-screen bg-gradient-to-b from-secondary/40 via-background to-background">
       <Helmet>
@@ -33,17 +31,11 @@ const Landing = () => {
         <meta property="og:description" content="Connect with the right Ministry, Department or Agency across the 774 LGAs + 6 Area Councils." />
         <meta property="og:url" content="https://thegate774app.lovable.app/" />
       </Helmet>
-      <header className="container py-8 flex items-center justify-between">
+      <header className="container py-8 flex items-center">
         <div className="flex items-center gap-3">
           <img src={logo} alt="" aria-hidden="true" className="h-10 w-10 rounded-full" />
           <span className="font-heading font-semibold text-lg">THE GATE®</span>
         </div>
-        <button
-          onClick={() => navigate("/admin")}
-          className="text-sm text-muted-foreground hover:text-foreground transition"
-        >
-          Admin
-        </button>
       </header>
 
       <section className="container max-w-5xl py-12 md:py-20 text-center space-y-6">
@@ -70,7 +62,7 @@ const Landing = () => {
               label={a.label}
               desc={a.desc}
               icon={ICONS[a.id]}
-              onClick={() => navigate(`/start/${a.id}`)}
+              onClick={() => {}}
             />
           ))}
         </div>
