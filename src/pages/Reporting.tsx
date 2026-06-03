@@ -210,7 +210,6 @@ export default function Reporting() {
                       onClick={() => {
                         setCategoryId(c.id);
                         setSubId("");
-                        setStep(1);
                       }}
                       className={cn(
                         "group relative text-left p-4 rounded-2xl border bg-card transition-all duration-300",
@@ -263,7 +262,6 @@ export default function Reporting() {
                         key={s.id}
                         onClick={() => {
                           setSubId(s.id);
-                          setStep(2);
                         }}
                         className={cn(
                           "text-left p-4 rounded-xl border bg-card transition-all",
