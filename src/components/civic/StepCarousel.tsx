@@ -67,18 +67,9 @@ export function StepCarousel({
   );
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-3", className)}>
       {/* Progress header */}
-      <div className="relative pb-2">
-        {/* Connecting rail — sits behind only the circles row */}
-        <div className="absolute left-4 right-4 top-4 h-px bg-border" aria-hidden />
-        <div
-          className="absolute left-4 top-4 h-px bg-primary transition-all duration-500"
-          style={{
-            width: `calc(${(safeStep / Math.max(steps.length - 1, 1)) * 100}% - 0px)`,
-          }}
-          aria-hidden
-        />
+      <div className="relative">
         <div className="relative flex items-start justify-between gap-2">
           {steps.map((s, i) => {
             const completed = i < safeStep;
@@ -148,7 +139,7 @@ export function StepCarousel({
       </div>
 
       {/* Nav */}
-      <div className="flex items-center justify-between gap-3 pt-2">
+      <div className="flex items-center justify-between gap-3 pt-1">
         <Button
           type="button"
           variant="outline"
