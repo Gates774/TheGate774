@@ -140,14 +140,6 @@ export default function Complaints() {
       <ModuleHeader
         eyebrow="Module 01 · Complaints"
         title="Lodge a Complaint"
-        action={
-          <Link
-            to="/my-complaints"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary-foreground/90 hover:text-primary-foreground transition"
-          >
-            <ListChecks className="h-3.5 w-3.5" /> My complaints
-          </Link>
-        }
       />
 
       <section className="container max-w-3xl py-10 space-y-8">
@@ -219,18 +211,7 @@ export default function Complaints() {
                 <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium block mb-2">
                   Evidence (optional)
                 </label>
-                {userId ? (
-                  <ComplaintEvidenceUploader userId={userId} paths={evidence} onChange={setEvidence} />
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => ensureUser()}
-                    className="rounded-xl"
-                  >
-                    Enable evidence upload
-                  </Button>
-                )}
+                <ComplaintEvidenceUploader userId="anon" paths={evidence} onChange={setEvidence} />
               </div>
 
               <div>
