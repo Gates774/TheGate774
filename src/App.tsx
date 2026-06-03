@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Complaints from "./pages/Complaints";
 import Requests from "./pages/Requests";
+import Enquiries from "./pages/Enquiries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/complaints" element={<Complaints />} />
             <Route path="/requests" element={<Requests />} />
+            <Route path="/enquiries" element={<Enquiries />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
