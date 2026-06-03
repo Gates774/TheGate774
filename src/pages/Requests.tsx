@@ -105,32 +105,28 @@ export default function Requests() {
       if (!data?.ok || !data?.analysis) throw new Error("No service guide returned");
       const guide = data.analysis as ComplaintAnalysis;
 
-      // Persist (best-effort: only when signed in)
-      const { data: auth } = await supabase.auth.getUser();
-      if (auth?.user) {
-        const { data: inserted, error: insErr } = await supabase
-          .from("service_requests")
-          .insert({
-            user_id: auth.user.id,
-            category_id: category.id,
-            category_label: category.label,
-            subcategory_id: subcategory.id,
-            subcategory_label: subcategory.label,
-            state: residenceState || null,
-            lga: residenceLga || null,
-            notes: description.trim() || null,
-            responsible_authority: (guide as { responsible_authority?: string })?.responsible_authority ?? null,
-            ai_analysis: guide as unknown as any,
-            status: "guide_generated",
-          })
-          .select("reference_code")
-          .single();
-        if (insErr) {
-          // non-blocking — still show the guide
-          console.warn("Could not save request:", insErr.message);
-        } else if (inserted?.reference_code) {
-          setReferenceCode(inserted.reference_code);
-        }
+      // Persist anonymously so admins can review.
+      const { data: inserted, error: insErr } = await supabase
+        .from("service_requests")
+        .insert({
+          user_id: null,
+          category_id: category.id,
+          category_label: category.label,
+          subcategory_id: subcategory.id,
+          subcategory_label: subcategory.label,
+          state: residenceState || null,
+          lga: residenceLga || null,
+          notes: description.trim() || null,
+          responsible_authority: (guide as { responsible_authority?: string })?.responsible_authority ?? null,
+          ai_analysis: guide as unknown as any,
+          status: "guide_generated",
+        })
+        .select("reference_code")
+        .single();
+      if (insErr) {
+        console.warn("Could not save request:", insErr.message);
+      } else if (inserted?.reference_code) {
+        setReferenceCode(inserted.reference_code);
       }
       setAnalysis(guide);
     } catch (err) {
@@ -154,14 +150,6 @@ export default function Requests() {
       <ModuleHeader
         eyebrow="Module 02 · Requests"
         title="Request a Service"
-        action={
-          <Link
-            to="/my-requests"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
-          >
-            <History className="h-3.5 w-3.5" strokeWidth={1.75} /> My requests
-          </Link>
-        }
       />
 
       <section className="container max-w-5xl py-10 space-y-10">
@@ -323,7 +311,7 @@ export default function Requests() {
                   <div className="min-w-0">
                     <div className="font-heading font-semibold">Service guide saved</div>
                     <div className="text-xs text-muted-foreground">
-                      Keep this reference for your records. You can revisit the full guide in My requests.
+                      Keep this reference for your records.
                     </div>
                   </div>
                 </div>
@@ -342,12 +330,6 @@ export default function Requests() {
                   >
                     <Copy className="h-3.5 w-3.5" /> Copy
                   </Button>
-                  <Link
-                    to="/my-requests"
-                    className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
-                  >
-                    <History className="h-3.5 w-3.5" /> View my requests
-                  </Link>
                 </div>
               </div>
             )}

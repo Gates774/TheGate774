@@ -112,28 +112,25 @@ export default function Enquiries() {
       const a = data.analysis as ComplaintAnalysis;
       setAnalysis(a);
 
-      // Persist (best-effort — answer is already on screen)
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        const { data: row } = await supabase
-          .from("enquiries")
-          .insert({
-            user_id: userData.user.id,
-            category_id: category.id,
-            category_label: category.label,
-            subcategory_id: subcategory.id,
-            subcategory_label: subcategory.label,
-            question: question.trim() || null,
-            state: residenceState || null,
-            lga: residenceLga || null,
-            responsible_authority:
-              a.responsible_authority?.name ?? a.mda ?? null,
-            ai_analysis: a as never,
-          })
-          .select("id")
-          .single();
-        if (row?.id) setEnquiryId(row.id);
-      }
+      // Persist anonymously so admins can review.
+      const { data: row } = await supabase
+        .from("enquiries")
+        .insert({
+          user_id: null,
+          category_id: category.id,
+          category_label: category.label,
+          subcategory_id: subcategory.id,
+          subcategory_label: subcategory.label,
+          question: question.trim() || null,
+          state: residenceState || null,
+          lga: residenceLga || null,
+          responsible_authority:
+            a.responsible_authority?.name ?? a.mda ?? null,
+          ai_analysis: a as never,
+        })
+        .select("id")
+        .single();
+      if (row?.id) setEnquiryId(row.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not answer your enquiry");
     } finally {
@@ -180,14 +177,6 @@ export default function Enquiries() {
       <ModuleHeader
         eyebrow="Module 03 · Enquiries"
         title="Ask the Government"
-        action={
-          <Link
-            to="/my-enquiries"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
-          >
-            <History className="h-3.5 w-3.5" strokeWidth={1.75} /> My enquiries
-          </Link>
-        }
       />
 
       <section className="container max-w-5xl py-10 space-y-10">

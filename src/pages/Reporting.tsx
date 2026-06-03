@@ -126,12 +126,10 @@ export default function Reporting() {
       if (!data?.ok || !data?.analysis) throw new Error("No report routing returned");
       const routing = data.analysis as ComplaintAnalysis;
 
-      // Persist the report
-      const { data: auth } = await supabase.auth.getUser();
       const { data: inserted, error: insErr } = await supabase
         .from("reports")
         .insert({
-          user_id: anonymous ? null : auth?.user?.id ?? null,
+          user_id: null,
           is_anonymous: anonymous,
           action_type: subcategory.label,
           category: category.label,
@@ -174,14 +172,6 @@ export default function Reporting() {
       <ModuleHeader
         eyebrow="Module 04 · Reporting"
         title="Report Misconduct"
-        action={
-          <Link
-            to="/track-report"
-            className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
-          >
-            <Search className="h-3.5 w-3.5" strokeWidth={1.75} /> Track a report
-          </Link>
-        }
       />
 
       <section className="container max-w-5xl py-10 space-y-10">
@@ -414,12 +404,6 @@ export default function Reporting() {
                   >
                     <Copy className="h-3.5 w-3.5" /> Copy
                   </Button>
-                  <Link
-                    to={`/track-report?code=${trackingCode}`}
-                    className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
-                  >
-                    <Search className="h-3.5 w-3.5" /> Track status
-                  </Link>
                 </div>
               </div>
             )}
