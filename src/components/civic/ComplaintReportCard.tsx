@@ -8,6 +8,8 @@ import {
   ArrowUpRight,
   Shield,
   AlertCircle,
+  Link2,
+  HelpCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,6 +30,10 @@ export interface ComplaintAnalysis {
   empathy_note?: string;
   out_of_scope?: boolean;
   confidence?: "high" | "medium" | "low";
+  /** Official authorities / publications cited as the source for this answer. */
+  sources?: Array<{ name: string; url?: string }>;
+  /** Suggested follow-up questions the user might want to ask next. */
+  follow_ups?: string[];
 }
 
 const TIER_META = {
@@ -150,6 +156,30 @@ export function ComplaintReportCard({
               <p className="text-sm leading-relaxed text-foreground/90">{analysis.rights_reminder}</p>
             </div>
           </div>
+        )}
+
+        {analysis.sources && analysis.sources.length > 0 && (
+          <Section label="Source authorities" icon={Link2}>
+            <ul className="space-y-1.5">
+              {analysis.sources.map((s, i) => (
+                <li key={i} className="text-sm flex items-start gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                  {s.url ? (
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline break-all"
+                    >
+                      {s.name}
+                    </a>
+                  ) : (
+                    <span>{s.name}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Section>
         )}
       </div>
     </article>
