@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Loader2, Send, RotateCcw, MapPin, CheckCircle2, Copy } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  RotateCcw,
+  MapPin,
+  CheckCircle2,
+  Copy,
+  ShieldCheck,
+  MessageSquareWarning,
+  Paperclip,
+  MapPinned,
+  Lock,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
@@ -138,115 +149,179 @@ export default function Complaints() {
       </Helmet>
 
       <ModuleHeader
-        eyebrow="Module 01 · Complaints"
         title="Lodge a Complaint"
       />
 
-      <section className="container max-w-3xl py-10 space-y-8">
+      <section className="container max-w-3xl py-10 md:py-14 space-y-8">
         {!analysis && !noMatch && (
-          <div className="space-y-6">
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium block mb-1.5">
-                  State of residence
-                </label>
-                <Select
-                  value={residenceState}
-                  onValueChange={(v) => {
-                    setResidenceState(v);
-                    setResidenceLga("");
-                  }}
-                >
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {states.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium block mb-1.5">
-                  LGA / Area Council
-                </label>
-                <Select value={residenceLga} onValueChange={setResidenceLga} disabled={!residenceState}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder={residenceState ? "Select LGA" : "Select state first"} />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {lgas.map((l) => (
-                      <SelectItem key={l} value={l}>{l}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <div className="relative">
+            {/* Soft ambient glow */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-x-6 -top-6 h-40 rounded-[2rem] bg-gradient-to-b from-[hsl(var(--accent))]/15 to-transparent blur-2xl"
+            />
 
-            <div>
-              <div className="flex items-end justify-between mb-2">
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium">
-                  Describe your complaint
-                </label>
-                <span className="text-[11px] text-muted-foreground">{content.length} chars</span>
-              </div>
-              <AutosuggestTextarea
-                value={content}
-                onChange={setContent}
-                topics={COMPLAINT_TOPICS}
-                placeholder="Start typing — e.g. 'Police officer at my LGA station collected ₦5,000…'"
-                rows={6}
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <VoiceRecorder onTranscript={(t) => setContent((prev) => (prev ? `${prev} ${t}` : t))} />
-              <span className="text-xs text-muted-foreground">Tap to speak your complaint in English or any Nigerian language.</span>
-            </div>
-
-            {/* Evidence + location */}
-            <div className="space-y-4 rounded-2xl border border-border/70 bg-card/50 p-4">
-              <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium block mb-2">
-                  Evidence (optional)
-                </label>
-                <ComplaintEvidenceUploader userId="anon" paths={evidence} onChange={setEvidence} />
-              </div>
-
-              <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium block mb-2">
-                  Live location (optional)
-                </label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={captureLocation}
-                    disabled={gpsLoading}
-                    className="gap-2 rounded-xl"
-                  >
-                    {gpsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                    {coords ? "Re-capture location" : "Capture my location"}
-                  </Button>
-                  {coords && (
-                    <span className="text-xs text-muted-foreground">
-                      {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-                    </span>
-                  )}
+            <div className="relative rounded-[1.75rem] border border-border/60 bg-card/95 shadow-[0_24px_60px_-30px_hsl(var(--civic-green)/0.45)] backdrop-blur-sm overflow-hidden">
+              {/* Card header */}
+              <div className="px-6 sm:px-8 pt-7 pb-6 border-b border-border/60 bg-gradient-to-b from-secondary/40 to-transparent">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/15">
+                    <MessageSquareWarning className="h-5 w-5" strokeWidth={1.75} />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="font-heading text-lg sm:text-xl font-semibold tracking-tight">
+                      File a citizen complaint
+                    </h2>
+                    <p className="text-xs sm:text-[13px] text-muted-foreground leading-relaxed">
+                      THE GATE® routes your complaint to the responsible Federal, State or Local MDA.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/60">
-              <Button
-                onClick={submit}
-                disabled={loading || content.trim().length < 10}
-                className="h-11 px-6 rounded-xl gap-2 btn-civic"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {loading ? "Analysing with THE GATE® AI…" : "Generate my complaint report"}
-              </Button>
+              <div className="p-6 sm:p-8 space-y-8">
+                {/* SECTION — Location */}
+                <FormSection
+                  step="01"
+                  title="Where are you?"
+                  description="So we route your complaint to the right tier of government."
+                >
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <FieldLabel>State of residence</FieldLabel>
+                      <Select
+                        value={residenceState}
+                        onValueChange={(v) => {
+                          setResidenceState(v);
+                          setResidenceLga("");
+                        }}
+                      >
+                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/70 focus:border-primary/60 transition-colors">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {states.map((s) => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <FieldLabel>LGA / Area Council</FieldLabel>
+                      <Select value={residenceLga} onValueChange={setResidenceLga} disabled={!residenceState}>
+                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/70 focus:border-primary/60 transition-colors">
+                          <SelectValue placeholder={residenceState ? "Select LGA" : "Select state first"} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {lgas.map((l) => (
+                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </FormSection>
+
+                {/* SECTION — Describe */}
+                <FormSection
+                  step="02"
+                  title="Describe your complaint"
+                  description="Be specific — what happened, where, and who was involved."
+                >
+                  <div className="relative group">
+                    <div
+                      aria-hidden
+                      className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 via-transparent to-[hsl(var(--accent))]/20 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"
+                    />
+                    <div className="relative rounded-2xl bg-background border border-border/70 group-focus-within:border-primary/50 transition-colors">
+                      <AutosuggestTextarea
+                        value={content}
+                        onChange={setContent}
+                        topics={COMPLAINT_TOPICS}
+                        placeholder="Start typing — e.g. 'Police officer at my LGA station collected ₦5,000 at a checkpoint on…'"
+                        rows={6}
+                      />
+                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/60 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-3 w-3" strokeWidth={2} />
+                          End-to-end private — only routed to the responsible MDA.
+                        </div>
+                        <span className="tabular-nums">{content.length} chars</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <VoiceRecorder onTranscript={(t) => setContent((prev) => (prev ? `${prev} ${t}` : t))} />
+                    <span className="text-xs text-muted-foreground">
+                      Or speak it — in English or any Nigerian language.
+                    </span>
+                  </div>
+                </FormSection>
+
+                {/* SECTION — Evidence */}
+                <FormSection
+                  step="03"
+                  title="Strengthen your complaint (optional)"
+                  description="Attach proof and pinpoint the spot — both make follow-up faster."
+                >
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-dashed border-border/80 bg-background/60 p-4 hover:border-primary/40 transition-colors">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Paperclip className="h-4 w-4 text-primary" strokeWidth={1.75} />
+                        <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-foreground/80">
+                          Evidence
+                        </span>
+                      </div>
+                      <ComplaintEvidenceUploader userId="anon" paths={evidence} onChange={setEvidence} />
+                    </div>
+
+                    <div className="rounded-2xl border border-dashed border-border/80 bg-background/60 p-4 hover:border-primary/40 transition-colors">
+                      <div className="flex items-center gap-2 mb-3">
+                        <MapPinned className="h-4 w-4 text-primary" strokeWidth={1.75} />
+                        <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-foreground/80">
+                          Live location
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={captureLocation}
+                        disabled={gpsLoading}
+                        className="w-full justify-center gap-2 rounded-xl h-11 border-border/70 hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        {gpsLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MapPin className="h-4 w-4" />
+                        )}
+                        {coords ? "Re-capture location" : "Capture my location"}
+                      </Button>
+                      {coords && (
+                        <div className="mt-2.5 text-[11px] text-muted-foreground font-mono text-center">
+                          {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </FormSection>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 sm:px-8 py-5 border-t border-border/60 bg-secondary/30 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                  <ShieldCheck className="h-4 w-4 text-primary" strokeWidth={1.75} />
+                  Anonymous submission — no account required.
+                </div>
+                <Button
+                  onClick={submit}
+                  disabled={loading || content.trim().length < 10}
+                  className="h-12 px-6 rounded-xl gap-2 btn-civic shadow-civic"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {loading ? "Analysing with THE GATE® AI…" : "Generate my complaint report"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -301,5 +376,46 @@ export default function Complaints() {
 
       <ModuleFooter />
     </main>
+  );
+}
+
+function FormSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-6 min-w-[2rem] px-2 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-semibold tracking-[0.18em] uppercase ring-1 ring-primary/15">
+          {step}
+        </span>
+        <div className="min-w-0">
+          <h3 className="font-heading text-[15px] font-semibold tracking-tight leading-tight">
+            {title}
+          </h3>
+          {description && (
+            <p className="text-[12.5px] text-muted-foreground mt-0.5 leading-relaxed">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground font-semibold block mb-1.5">
+      {children}
+    </label>
   );
 }
