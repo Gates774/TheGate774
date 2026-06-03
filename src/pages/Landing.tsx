@@ -52,16 +52,16 @@ const Landing = () => {
             {/* soft halo behind the medallion */}
             <span
               aria-hidden
-              className="absolute inset-0 -m-6 rounded-full bg-[hsl(var(--accent))]/20 blur-2xl"
+              className="absolute inset-0 -m-4 sm:-m-5 md:-m-6 rounded-full bg-[hsl(var(--accent))]/20 blur-2xl"
             />
             <span
               aria-hidden
-              className="absolute inset-0 -m-2 rounded-full ring-1 ring-white/20"
+              className="absolute inset-0 -m-1.5 sm:-m-2 rounded-full ring-1 ring-white/20"
             />
             <img
               src={gate774Logo.url}
               alt="THE GATE® 774 — official emblem"
-              className="relative h-24 w-24 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)] animate-fade-in"
+              className="relative h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.4)] animate-fade-in"
               loading="eager"
               decoding="async"
             />
