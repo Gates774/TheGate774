@@ -9,6 +9,7 @@ import Complaints from "./pages/Complaints";
 import MyComplaints from "./pages/MyComplaints";
 import Requests from "./pages/Requests";
 import Enquiries from "./pages/Enquiries";
+import MyEnquiries from "./pages/MyEnquiries";
 import Reporting from "./pages/Reporting";
 import Application from "./pages/Application";
 import Registration from "./pages/Registration";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/my-complaints" element={<MyComplaints />} />
             <Route path="/requests" element={<Requests />} />
             <Route path="/enquiries" element={<Enquiries />} />
+            <Route path="/my-enquiries" element={<MyEnquiries />} />
             <Route path="/reporting" element={<Reporting />} />
             <Route path="/application" element={<Application />} />
             <Route path="/registration" element={<Registration />} />

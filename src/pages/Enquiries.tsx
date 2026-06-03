@@ -15,8 +15,13 @@ import {
   LandPlot,
   PiggyBank,
   Check,
+  ThumbsUp,
+  ThumbsDown,
+  History,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
@@ -50,6 +55,8 @@ export default function Enquiries() {
   const [residenceLga, setResidenceLga] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
+  const [enquiryId, setEnquiryId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<1 | -1 | null>(null);
 
   const category = useMemo(
     () => ENQUIRY_CATEGORIES.find((c) => c.id === categoryId) ?? null,
@@ -69,6 +76,8 @@ export default function Enquiries() {
     setCategoryId("");
     setSubId("");
     setQuestion("");
+    setEnquiryId(null);
+    setFeedback(null);
   };
 
   const submit = async () => {
@@ -78,6 +87,8 @@ export default function Enquiries() {
     }
     setLoading(true);
     setAnalysis(null);
+    setEnquiryId(null);
+    setFeedback(null);
 
     const content = [
       `Enquiry topic: ${subcategory.label} (${category.label}).`,
@@ -98,12 +109,61 @@ export default function Enquiries() {
       });
       if (error) throw error;
       if (!data?.ok || !data?.analysis) throw new Error("No answer returned");
-      setAnalysis(data.analysis as ComplaintAnalysis);
+      const a = data.analysis as ComplaintAnalysis;
+      setAnalysis(a);
+
+      // Persist (best-effort — answer is already on screen)
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { data: row } = await supabase
+          .from("enquiries")
+          .insert({
+            user_id: userData.user.id,
+            category_id: category.id,
+            category_label: category.label,
+            subcategory_id: subcategory.id,
+            subcategory_label: subcategory.label,
+            question: question.trim() || null,
+            state: residenceState || null,
+            lga: residenceLga || null,
+            responsible_authority:
+              a.responsible_authority?.name ?? a.mda ?? null,
+            ai_analysis: a as never,
+          })
+          .select("id")
+          .single();
+        if (row?.id) setEnquiryId(row.id);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not answer your enquiry");
     } finally {
       setLoading(false);
     }
+  };
+
+  const rate = async (value: 1 | -1) => {
+    if (!enquiryId) {
+      // No persisted row yet (likely signed out); accept rating locally
+      setFeedback(value);
+      toast.success(value === 1 ? "Glad it helped." : "Thanks — we'll improve.");
+      return;
+    }
+    setFeedback(value);
+    const { error } = await supabase
+      .from("enquiries")
+      .update({ helpful_rating: value })
+      .eq("id", enquiryId);
+    if (error) toast.error("Could not save your feedback.");
+    else toast.success(value === 1 ? "Glad it helped." : "Thanks — we'll improve.");
+  };
+
+  const askFollowUp = (q: string) => {
+    setQuestion(q);
+    setAnalysis(null);
+    setEnquiryId(null);
+    setFeedback(null);
+    // Scroll back to top so the user sees the form
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -117,7 +177,18 @@ export default function Enquiries() {
         <link rel="canonical" href="https://thegate774app.lovable.app/enquiries" />
       </Helmet>
 
-      <ModuleHeader eyebrow="Module 03 · Enquiries" title="Ask the Government" />
+      <ModuleHeader
+        eyebrow="Module 03 · Enquiries"
+        title="Ask the Government"
+        action={
+          <Link
+            to="/my-enquiries"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
+          >
+            <History className="h-3.5 w-3.5" strokeWidth={1.75} /> My enquiries
+          </Link>
+        }
+      />
 
       <section className="container max-w-5xl py-10 space-y-10">
         {!analysis && (
@@ -267,6 +338,62 @@ export default function Enquiries() {
         {analysis && (
           <div className="space-y-4 animate-fade-in">
             <ComplaintReportCard analysis={analysis} eyebrow="Your Civic Answer" />
+
+            {/* Helpful feedback */}
+            <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-1">
+                  Was this helpful?
+                </div>
+                <p className="text-sm text-foreground/85">
+                  Your feedback helps THE GATE® get sharper for everyone.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={feedback === 1 ? "default" : "outline"}
+                  onClick={() => rate(1)}
+                  disabled={feedback !== null}
+                  className="rounded-xl gap-1.5"
+                >
+                  <ThumbsUp className="h-4 w-4" strokeWidth={1.75} /> Helpful
+                </Button>
+                <Button
+                  size="sm"
+                  variant={feedback === -1 ? "default" : "outline"}
+                  onClick={() => rate(-1)}
+                  disabled={feedback !== null}
+                  className="rounded-xl gap-1.5"
+                >
+                  <ThumbsDown className="h-4 w-4" strokeWidth={1.75} /> Not helpful
+                </Button>
+              </div>
+            </div>
+
+            {/* Suggested follow-ups */}
+            {analysis.follow_ups && analysis.follow_ups.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.75} />
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                    You may also want to ask
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.follow_ups.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => askFollowUp(q)}
+                      className="text-left text-sm px-3 py-2 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <Button variant="outline" onClick={reset} className="rounded-xl gap-2">
                 <RotateCcw className="h-4 w-4" /> Ask another question
