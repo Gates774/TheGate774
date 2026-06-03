@@ -3,8 +3,8 @@ import { ReactNode } from "react";
 interface Props {
   /** Small uppercase pill above the title. Accepts a string or any node (e.g. a logo). */
   pill?: ReactNode;
-  /** Big white serif title. */
-  title: ReactNode;
+  /** Big white serif title. Pass null to render no title (compact / logo-only headers). */
+  title?: ReactNode;
   /** Optional sub-headline under the title. */
   subtitle?: ReactNode;
   /** Optional CTAs row below subtitle. */
@@ -13,13 +13,15 @@ interface Props {
   topLeft?: ReactNode;
   /** Optional element to anchor top-right (e.g. secondary action). */
   topRight?: ReactNode;
+  /** Compact variant — tighter vertical padding for inner module pages. */
+  compact?: boolean;
 }
 
 /**
  * Shared deep-green hero used by Landing and every module page.
  * Solid civic green, subtle diagonal stripes + faint circles, centered.
  */
-export function CivicHero({ pill, title, subtitle, ctas, topLeft, topRight }: Props) {
+export function CivicHero({ pill, title, subtitle, ctas, topLeft, topRight, compact }: Props) {
   return (
     <header
       className="relative overflow-hidden text-white border-b-4 border-[hsl(var(--accent))]"
@@ -62,7 +64,13 @@ export function CivicHero({ pill, title, subtitle, ctas, topLeft, topRight }: Pr
         <div className="absolute top-5 right-4 md:right-8 z-10">{topRight}</div>
       )}
 
-      <div className="container max-w-4xl pt-16 md:pt-20 pb-16 md:pb-24 flex flex-col items-center text-center">
+      <div
+        className={
+          compact
+            ? "container max-w-4xl pt-10 md:pt-14 pb-10 md:pb-14 flex flex-col items-center text-center"
+            : "container max-w-4xl pt-16 md:pt-20 pb-16 md:pb-24 flex flex-col items-center text-center"
+        }
+      >
         {/* Pill slot — string renders as a constitutional pill, node renders as-is (e.g. a logo). */}
         {typeof pill === "string" ? (
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/30 bg-white/[0.04] text-[10px] md:text-[11px] font-semibold tracking-[0.18em] uppercase text-white/85 backdrop-blur-sm">
@@ -73,9 +81,11 @@ export function CivicHero({ pill, title, subtitle, ctas, topLeft, topRight }: Pr
         )}
 
         {/* Title — large serif, white */}
-        <h1 className="mt-7 font-heading font-bold tracking-tight text-white leading-[1.02] text-5xl md:text-7xl lg:text-[5.5rem] animate-slide-up">
-          {title}
-        </h1>
+        {title != null && title !== false && (
+          <h1 className="mt-7 font-heading font-bold tracking-tight text-white leading-[1.02] text-5xl md:text-7xl lg:text-[5.5rem] animate-slide-up">
+            {title}
+          </h1>
+        )}
 
         {/* Subtitle */}
         {subtitle && (
