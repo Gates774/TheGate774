@@ -19,25 +19,31 @@ interface Props {
  */
 export function CivicHero({ pill, title, subtitle, ctas, topLeft }: Props) {
   return (
-    <header className="relative overflow-hidden text-white">
-      {/* Solid civic-green base */}
+    <header
+      className="relative overflow-hidden text-white border-b-4 border-[hsl(var(--accent))]"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(var(--civic-green-dark)) 0%, hsl(var(--civic-green)) 55%, hsl(var(--civic-green-light)) 100%)",
+      }}
+    >
+      {/* Diagonal stripe pattern (stronger) */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-br from-[hsl(var(--civic-green-dark))] via-primary to-[hsl(var(--civic-green))]"
-      />
-      {/* Diagonal stripe pattern */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-[0.07]"
+        className="absolute inset-0 -z-0 opacity-[0.14]"
         style={{
           backgroundImage:
             "repeating-linear-gradient(135deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 14px)",
         }}
       />
+      {/* Top glow */}
+      <div
+        aria-hidden
+        className="absolute -top-32 left-1/2 -translate-x-1/2 h-72 w-[900px] rounded-full bg-white/10 blur-3xl"
+      />
       {/* Faint concentric circles, right side */}
       <svg
         aria-hidden
-        className="pointer-events-none absolute -right-32 top-1/2 -translate-y-1/2 h-[820px] w-[820px] opacity-[0.09]"
+        className="pointer-events-none absolute -right-32 top-1/2 -translate-y-1/2 h-[820px] w-[820px] opacity-[0.16]"
         viewBox="0 0 800 800"
         fill="none"
       >
