@@ -144,7 +144,7 @@ export default function Reporting() {
           residence_state: residenceState || null,
           residence_lga: residenceLga || null,
           evidence_urls: evidence,
-          ai_analysis: routing as unknown as Record<string, unknown>,
+          ai_analysis: routing as unknown as any,
           status: "submitted",
         })
         .select("tracking_code")
@@ -174,7 +174,7 @@ export default function Reporting() {
       <ModuleHeader
         eyebrow="Module 04 · Reporting"
         title="Report Misconduct"
-        secondaryAction={
+        action={
           <Link
             to="/track-report"
             className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
