@@ -391,6 +391,78 @@ export type Database = {
           },
         ]
       }
+      complaints: {
+        Row: {
+          admin_notes: string | null
+          ai_analysis: Json | null
+          category: string
+          created_at: string
+          deleted_at: string | null
+          description: string
+          evidence_urls: string[]
+          id: string
+          latitude: number | null
+          lga: string | null
+          location_address: string | null
+          location_fuzzy: boolean
+          longitude: number | null
+          reference_code: string
+          resolution_notes: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["complaint_status"]
+          title: string
+          updated_at: string
+          urgency: Database["public"]["Enums"]["complaint_urgency"]
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          ai_analysis?: Json | null
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          description: string
+          evidence_urls?: string[]
+          id?: string
+          latitude?: number | null
+          lga?: string | null
+          location_address?: string | null
+          location_fuzzy?: boolean
+          longitude?: number | null
+          reference_code?: string
+          resolution_notes?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          title: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["complaint_urgency"]
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          ai_analysis?: Json | null
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          evidence_urls?: string[]
+          id?: string
+          latitude?: number | null
+          lga?: string | null
+          location_address?: string | null
+          location_fuzzy?: boolean
+          longitude?: number | null
+          reference_code?: string
+          resolution_notes?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          title?: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["complaint_urgency"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_removals: {
         Row: {
           content_id: string

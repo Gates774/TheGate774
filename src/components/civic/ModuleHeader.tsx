@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CivicHero } from "@/components/civic/CivicHero";
 
@@ -7,9 +8,11 @@ interface Props {
   title: string;
   /** Optional. Kept for backward-compat — not rendered in the premium header. */
   description?: string;
+  /** Optional secondary action rendered in the top-right of the hero. */
+  action?: ReactNode;
 }
 
-export function ModuleHeader({ eyebrow, title }: Props) {
+export function ModuleHeader({ eyebrow, title, action }: Props) {
   return (
     <CivicHero
       pill={eyebrow}
@@ -22,6 +25,7 @@ export function ModuleHeader({ eyebrow, title }: Props) {
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to modules
         </Link>
       }
+      topRight={action}
     />
   );
 }
