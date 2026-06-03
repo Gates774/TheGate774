@@ -8,6 +8,7 @@ import Landing from "./pages/Landing";
 import Complaints from "./pages/Complaints";
 import MyComplaints from "./pages/MyComplaints";
 import Requests from "./pages/Requests";
+import MyRequests from "./pages/MyRequests";
 import Enquiries from "./pages/Enquiries";
 import MyEnquiries from "./pages/MyEnquiries";
 import Reporting from "./pages/Reporting";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/complaints" element={<Complaints />} />
             <Route path="/my-complaints" element={<MyComplaints />} />
             <Route path="/requests" element={<Requests />} />
+            <Route path="/my-requests" element={<MyRequests />} />
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/my-enquiries" element={<MyEnquiries />} />
             <Route path="/reporting" element={<Reporting />} />
