@@ -30,6 +30,7 @@ const Landing = () => {
     else if (id === "request") navigate("/requests");
     else if (id === "enquiries") navigate("/enquiries");
     else if (id === "reporting") navigate("/reporting");
+    else if (id === "application") navigate("/application");
     else toast("This module ships in the next phase.");
   };
   return (
