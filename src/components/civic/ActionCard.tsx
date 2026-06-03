@@ -22,24 +22,14 @@ export function ActionCard({ label, desc, icon: Icon, onClick }: Props) {
       {/* hover wash */}
       <div
         aria-hidden
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.08]"
-      />
-      {/* corner accent */}
-      <div
-        aria-hidden
-        className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/[0.03] via-transparent to-primary/[0.06]"
       />
 
       <div className="relative flex items-start justify-between mb-5">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--civic-green-light))] text-primary-foreground flex items-center justify-center shadow-civic">
-            <Icon className="h-6 w-6" strokeWidth={1.75} />
-          </div>
-        </div>
+        <Icon className="h-7 w-7 text-primary" strokeWidth={1.5} />
         <ArrowUpRight
-          className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-300"
-          strokeWidth={1.75}
+          className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-300"
+          strokeWidth={1.5}
         />
       </div>
 
