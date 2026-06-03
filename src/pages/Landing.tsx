@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import logo from "@/assets/gate774-logo.webp";
+// Note: ShieldCheck, MapPin, Sparkles and logo still used in hero/top bar.
 import { ActionCard } from "@/components/civic/ActionCard";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { ACTION_TYPES } from "@/data/govResponsibilities";
