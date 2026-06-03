@@ -586,6 +586,57 @@ export type Database = {
         }
         Relationships: []
       }
+      enquiries: {
+        Row: {
+          ai_analysis: Json | null
+          category_id: string
+          category_label: string
+          created_at: string
+          helpful_rating: number | null
+          id: string
+          lga: string | null
+          question: string | null
+          responsible_authority: string | null
+          state: string | null
+          subcategory_id: string | null
+          subcategory_label: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          category_id: string
+          category_label: string
+          created_at?: string
+          helpful_rating?: number | null
+          id?: string
+          lga?: string | null
+          question?: string | null
+          responsible_authority?: string | null
+          state?: string | null
+          subcategory_id?: string | null
+          subcategory_label?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: Json | null
+          category_id?: string
+          category_label?: string
+          created_at?: string
+          helpful_rating?: number | null
+          id?: string
+          lga?: string | null
+          question?: string | null
+          responsible_authority?: string | null
+          state?: string | null
+          subcategory_id?: string | null
+          subcategory_label?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       knowledge_hub_content: {
         Row: {
           category: string
