@@ -1,36 +1,78 @@
-import { ShieldCheck, MapPin, Sparkles } from "lucide-react";
-import logo from "@/assets/gate774-logo.webp";
+import { Apple, Play, Sparkles } from "lucide-react";
 
 export function ModuleFooter() {
   return (
-    <footer className="relative mt-12 text-primary-foreground">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[hsl(var(--civic-green-dark))] via-primary to-[hsl(var(--civic-green-light))]" />
-      <div
+    <footer className="relative mt-16 text-primary-foreground overflow-hidden">
+      {/* Deep green base + soft vignette */}
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-[hsl(var(--civic-green-dark))] via-primary to-[hsl(var(--civic-green-dark))]" />
+      <div aria-hidden className="absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-[900px] rounded-full bg-white/10 blur-3xl" />
+      <Sparkles
         aria-hidden
-        className="absolute inset-0 -z-10 opacity-[0.08]"
-        style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-          backgroundSize: "22px 22px",
-        }}
+        className="absolute top-10 left-10 h-6 w-6 text-white/30"
+        strokeWidth={1.25}
       />
-      <div className="container max-w-5xl py-10 flex flex-col items-center text-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-lg">
-            <img src={logo} alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
-          </div>
-          <div className="font-heading text-lg font-semibold">
-            THE GATE<span className="align-super text-[10px]">®</span>
-          </div>
+
+      <div className="container max-w-3xl py-20 md:py-24 flex flex-col items-center text-center gap-6">
+        {/* Pill */}
+        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/25 bg-white/5 text-[12px] font-medium text-white/85 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          Coming soon on iOS &amp; Android
+        </span>
+
+        {/* Headline */}
+        <h2 className="font-heading text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05] text-white">
+          Civic power, in your pocket.
+        </h2>
+
+        {/* Subline */}
+        <p className="text-[15px] md:text-base text-white/75 max-w-xl leading-relaxed">
+          The THE GATE® mobile app is on the way — built for every Nigerian, in every LGA.
+        </p>
+
+        {/* Store buttons */}
+        <div className="mt-3 flex flex-col sm:flex-row items-center gap-3">
+          <StoreButton
+            icon={<Apple className="h-7 w-7" strokeWidth={1.5} fill="currentColor" />}
+            small="Coming Soon"
+            big="App Store"
+          />
+          <StoreButton
+            icon={<Play className="h-7 w-7" strokeWidth={1.5} fill="currentColor" />}
+            small="Coming Soon"
+            big="Google Play"
+          />
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/85">
-          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> 1999 Constitution</span>
-          <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> 774 LGAs + 6 Area Councils</span>
-          <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> AI-routed to the right MDA</span>
-        </div>
-        <div className="text-[11px] text-white/60 tracking-wide">
-          © {new Date().getFullYear()} THE GATE® · Universal Participation: The Collectives
-        </div>
+
+        {/* Microcopy */}
+        <p className="mt-2 text-[12px] tracking-wide text-white/55">
+          Free · Constitutionally grounded · Built for the Collectives
+        </p>
       </div>
     </footer>
+  );
+}
+
+function StoreButton({
+  icon,
+  small,
+  big,
+}: {
+  icon: React.ReactNode;
+  small: string;
+  big: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled
+      aria-label={`${big} — ${small}`}
+      className="group relative flex items-center gap-3 px-5 py-3 rounded-2xl bg-white text-foreground shadow-xl hover:shadow-2xl transition-all cursor-not-allowed opacity-95"
+    >
+      {icon}
+      <div className="flex flex-col items-start leading-tight text-left">
+        <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{small}</span>
+        <span className="font-heading text-lg font-semibold -mt-0.5">{big}</span>
+      </div>
+    </button>
   );
 }

@@ -8,13 +8,14 @@ import {
   ShieldAlert,
   FileSignature,
   IdCard,
-  ArrowRight,
   ShieldCheck,
   MapPin,
   Sparkles,
 } from "lucide-react";
 import logo from "@/assets/gate774-logo.webp";
+// Note: ShieldCheck, MapPin, Sparkles and logo still used in hero/top bar.
 import { ActionCard } from "@/components/civic/ActionCard";
+import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { ACTION_TYPES } from "@/data/govResponsibilities";
 
 const ICONS = {
@@ -120,68 +121,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* PREMIUM FOOTER */}
-      <footer className="relative mt-8 text-primary-foreground">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[hsl(var(--civic-green-dark))] via-primary to-[hsl(var(--civic-green-light))]" />
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 opacity-[0.08]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-            backgroundSize: "22px 22px",
-          }}
-        />
-        <div className="container py-14 grid gap-10 md:grid-cols-3">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-lg">
-                <img src={logo} alt="" aria-hidden="true" className="h-10 w-10 object-contain" />
-              </div>
-              <div>
-                <div className="font-heading text-xl font-semibold">THE GATE<span className="align-super text-[10px]">®</span></div>
-                <div className="text-xs text-white/70">Universal Participation · The Collectives</div>
-              </div>
-            </div>
-            <p className="text-sm text-white/80 leading-relaxed max-w-sm">
-              A Common Operating Platform bridging citizens and government across the 774 Local Government Areas and 6 Area Councils of Nigeria.
-            </p>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold tracking-[0.18em] uppercase text-white/60 mb-4">Civic Actions</div>
-            <ul className="space-y-2 text-sm">
-              {ACTION_TYPES.slice(0, 6).map((a) => (
-                <li key={a.id}>
-                  <button
-                    onClick={() => go(a.id)}
-                    className="text-white/85 hover:text-white inline-flex items-center gap-1.5 group"
-                  >
-                    {a.label}
-                    <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold tracking-[0.18em] uppercase text-white/60 mb-4">Framework</div>
-            <ul className="space-y-2 text-sm text-white/85">
-              <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-white" /> Grounded in the 1999 Constitution</li>
-              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-white" /> Exclusive · Concurrent · Residual lists</li>
-              <li className="flex items-start gap-2"><Sparkles className="h-4 w-4 mt-0.5 text-white" /> AI-routed to the responsible MDA</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-white/15">
-          <div className="container py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/70">
-            <span>© {new Date().getFullYear()} THE GATE® — Civic engagement for every Nigerian.</span>
-            <span className="tracking-wide">Built for the Collectives · Powered by THE GATE®</span>
-          </div>
-        </div>
-      </footer>
+      <ModuleFooter />
     </main>
   );
 };
