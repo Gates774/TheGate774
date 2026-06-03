@@ -284,14 +284,6 @@ export default function Complaints() {
                       <Button size="sm" variant="ghost" onClick={copyRef} className="h-8 gap-1.5">
                         <Copy className="h-3.5 w-3.5" /> Copy
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate("/my-complaints")}
-                        className="h-8 gap-1.5 rounded-lg"
-                      >
-                        <ListChecks className="h-3.5 w-3.5" /> Track status
-                      </Button>
                     </div>
                   </div>
                 </div>
