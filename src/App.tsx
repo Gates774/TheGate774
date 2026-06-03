@@ -14,6 +14,7 @@ import MyEnquiries from "./pages/MyEnquiries";
 import Reporting from "./pages/Reporting";
 import TrackReport from "./pages/TrackReport";
 import Application from "./pages/Application";
+import MyApplications from "./pages/MyApplications";
 import Registration from "./pages/Registration";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/reporting" element={<Reporting />} />
             <Route path="/track-report" element={<TrackReport />} />
             <Route path="/application" element={<Application />} />
+            <Route path="/my-applications" element={<MyApplications />} />
             <Route path="/registration" element={<Registration />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
