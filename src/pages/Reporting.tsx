@@ -456,23 +456,18 @@ export default function Reporting() {
   );
 }
 
-function Step({
-  number,
-  label,
+function StepFrame({
+  title,
   children,
 }: {
-  number: number;
-  label: string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shadow-civic">
-          {number}
-        </div>
-        <h2 className="font-heading text-base md:text-lg font-semibold tracking-tight">{label}</h2>
-      </div>
+    <div className="rounded-[1.5rem] border border-border/60 bg-card/95 shadow-[0_24px_60px_-30px_hsl(var(--civic-green)/0.35)] backdrop-blur-sm p-6 sm:p-8">
+      <h2 className="font-heading text-base md:text-lg font-semibold tracking-tight mb-5">
+        {title}
+      </h2>
       {children}
     </div>
   );
