@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { ComplaintReportCard, type ComplaintAnalysis } from "@/components/civic/ComplaintReportCard";
+import { StepCarousel } from "@/components/civic/StepCarousel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,6 +55,7 @@ export default function Requests() {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
   const [referenceCode, setReferenceCode] = useState<string | null>(null);
+  const [step, setStep] = useState(0);
 
   const category = useMemo(
     () => REQUEST_CATEGORIES.find((c) => c.id === categoryId) ?? null,
@@ -74,6 +76,7 @@ export default function Requests() {
     setCategoryId("");
     setSubId("");
     setDescription("");
+    setStep(0);
   };
 
   const submit = async () => {
@@ -154,10 +157,17 @@ export default function Requests() {
 
       <section className="container max-w-5xl py-10 space-y-10">
         {!analysis && (
-          <>
-            {/* Step 1 — Category tiles */}
-            <Step number={1} label="Choose a service category">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <StepCarousel
+            step={step}
+            onStepChange={setStep}
+            steps={[
+              {
+                id: "category",
+                label: "Category",
+                canNext: Boolean(category),
+                content: (
+                  <StepFrame title="Choose a service category">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {REQUEST_CATEGORIES.map((c) => {
                   const Icon = ICONS[c.icon];
                   const active = c.id === categoryId;
@@ -167,6 +177,7 @@ export default function Requests() {
                       onClick={() => {
                         setCategoryId(c.id);
                         setSubId("");
+                        setStep(1);
                       }}
                       className={cn(
                         "group relative text-left p-4 rounded-2xl border bg-card transition-all duration-300",
@@ -195,19 +206,32 @@ export default function Requests() {
                     </button>
                   );
                 })}
-              </div>
-            </Step>
-
-            {/* Step 2 — Specific service */}
-            {category && (
-              <Step number={2} label={`Pick a specific service in ${category.label}`}>
-                <div className="grid sm:grid-cols-2 gap-2.5 animate-fade-in">
-                  {category.subcategories.map((s) => {
+                    </div>
+                  </StepFrame>
+                ),
+              },
+              {
+                id: "specific",
+                label: "Specific",
+                canNext: Boolean(subcategory),
+                content: (
+                  <StepFrame
+                    title={
+                      category
+                        ? `Pick a specific service in ${category.label}`
+                        : "Pick a specific service"
+                    }
+                  >
+                    <div className="grid sm:grid-cols-2 gap-2.5">
+                      {(category?.subcategories ?? []).map((s) => {
                     const active = s.id === subId;
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setSubId(s.id)}
+                        onClick={() => {
+                          setSubId(s.id);
+                          setStep(2);
+                        }}
                         className={cn(
                           "text-left p-4 rounded-xl border bg-card transition-all",
                           active
@@ -229,14 +253,17 @@ export default function Requests() {
                       </button>
                     );
                   })}
-                </div>
-              </Step>
-            )}
-
-            {/* Step 3 — Where & details */}
-            {subcategory && (
-              <Step number={3} label="Tell us where you are (optional details)">
-                <div className="grid sm:grid-cols-2 gap-3 animate-fade-in">
+                    </div>
+                  </StepFrame>
+                ),
+              },
+              {
+                id: "details",
+                label: "Details",
+                hideNext: true,
+                content: (
+                  <StepFrame title="Tell us where you are (optional details)">
+                    <div className="grid sm:grid-cols-2 gap-3">
                   <div>
                     <Label>State of residence</Label>
                     <Select
@@ -271,7 +298,7 @@ export default function Requests() {
                   </div>
                 </div>
 
-                <div className="mt-4 animate-fade-in">
+                <div className="mt-4">
                   <Label>Add any specifics (optional)</Label>
                   <Textarea
                     value={description}
@@ -295,9 +322,11 @@ export default function Requests() {
                     {loading ? "Finding the right service…" : "Generate my service guide"}
                   </Button>
                 </div>
-              </Step>
-            )}
-          </>
+                  </StepFrame>
+                ),
+              },
+            ]}
+          />
         )}
 
         {analysis && (
@@ -348,23 +377,18 @@ export default function Requests() {
   );
 }
 
-function Step({
-  number,
-  label,
+function StepFrame({
+  title,
   children,
 }: {
-  number: number;
-  label: string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shadow-civic">
-          {number}
-        </div>
-        <h2 className="font-heading text-base md:text-lg font-semibold tracking-tight">{label}</h2>
-      </div>
+    <div className="rounded-[1.5rem] border border-border/60 bg-card/95 shadow-[0_24px_60px_-30px_hsl(var(--civic-green)/0.35)] backdrop-blur-sm p-6 sm:p-8">
+      <h2 className="font-heading text-base md:text-lg font-semibold tracking-tight mb-5">
+        {title}
+      </h2>
       {children}
     </div>
   );

@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { ComplaintReportCard, type ComplaintAnalysis } from "@/components/civic/ComplaintReportCard";
+import { StepCarousel } from "@/components/civic/StepCarousel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +64,7 @@ export default function Reporting() {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
   const [trackingCode, setTrackingCode] = useState<string | null>(null);
+  const [step, setStep] = useState(0);
 
   const category = useMemo(
     () => REPORTING_CATEGORIES.find((c) => c.id === categoryId) ?? null,
@@ -90,6 +92,7 @@ export default function Reporting() {
     setEvidence([]);
     setFullName("");
     setPhone("");
+    setStep(0);
   };
 
   const submit = async () => {
@@ -187,8 +190,17 @@ export default function Reporting() {
               </div>
             </div>
 
-            <Step number={1} label="Choose what you're reporting">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <StepCarousel
+              step={step}
+              onStepChange={setStep}
+              steps={[
+                {
+                  id: "category",
+                  label: "Category",
+                  canNext: Boolean(category),
+                  content: (
+                    <StepFrame title="Choose what you're reporting">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {REPORTING_CATEGORIES.map((c) => {
                   const Icon = ICONS[c.icon];
                   const active = c.id === categoryId;
@@ -198,6 +210,7 @@ export default function Reporting() {
                       onClick={() => {
                         setCategoryId(c.id);
                         setSubId("");
+                        setStep(1);
                       }}
                       className={cn(
                         "group relative text-left p-4 rounded-2xl border bg-card transition-all duration-300",
@@ -226,18 +239,32 @@ export default function Reporting() {
                     </button>
                   );
                 })}
-              </div>
-            </Step>
-
-            {category && (
-              <Step number={2} label={`Pick the specific offence in ${category.label}`}>
-                <div className="grid sm:grid-cols-2 gap-2.5 animate-fade-in">
-                  {category.subcategories.map((s) => {
+                      </div>
+                    </StepFrame>
+                  ),
+                },
+                {
+                  id: "specific",
+                  label: "Offence",
+                  canNext: Boolean(subcategory),
+                  content: (
+                    <StepFrame
+                      title={
+                        category
+                          ? `Pick the specific offence in ${category.label}`
+                          : "Pick the specific offence"
+                      }
+                    >
+                      <div className="grid sm:grid-cols-2 gap-2.5">
+                        {(category?.subcategories ?? []).map((s) => {
                     const active = s.id === subId;
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setSubId(s.id)}
+                        onClick={() => {
+                          setSubId(s.id);
+                          setStep(2);
+                        }}
                         className={cn(
                           "text-left p-4 rounded-xl border bg-card transition-all",
                           active
@@ -259,13 +286,17 @@ export default function Reporting() {
                       </button>
                     );
                   })}
-                </div>
-              </Step>
-            )}
-
-            {subcategory && (
-              <Step number={3} label="Describe what happened & where">
-                <div className="grid sm:grid-cols-2 gap-3 animate-fade-in">
+                      </div>
+                    </StepFrame>
+                  ),
+                },
+                {
+                  id: "details",
+                  label: "Details",
+                  hideNext: true,
+                  content: (
+                    <StepFrame title="Describe what happened & where">
+                      <div className="grid sm:grid-cols-2 gap-3">
                   <div>
                     <Label>State where it happened</Label>
                     <Select
@@ -300,7 +331,7 @@ export default function Reporting() {
                   </div>
                 </div>
 
-                <div className="mt-4 animate-fade-in">
+                <div className="mt-4">
                   <Label>What happened? Include who, when, and any evidence you have</Label>
                   <Textarea
                     value={description}
@@ -369,8 +400,11 @@ export default function Reporting() {
                     {loading ? "Routing your report…" : "Submit my report"}
                   </Button>
                 </div>
-              </Step>
-            )}
+                    </StepFrame>
+                  ),
+                },
+              ]}
+            />
           </>
         )}
 
@@ -422,23 +456,18 @@ export default function Reporting() {
   );
 }
 
-function Step({
-  number,
-  label,
+function StepFrame({
+  title,
   children,
 }: {
-  number: number;
-  label: string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shadow-civic">
-          {number}
-        </div>
-        <h2 className="font-heading text-base md:text-lg font-semibold tracking-tight">{label}</h2>
-      </div>
+    <div className="rounded-[1.5rem] border border-border/60 bg-card/95 shadow-[0_24px_60px_-30px_hsl(var(--civic-green)/0.35)] backdrop-blur-sm p-6 sm:p-8">
+      <h2 className="font-heading text-base md:text-lg font-semibold tracking-tight mb-5">
+        {title}
+      </h2>
       {children}
     </div>
   );
