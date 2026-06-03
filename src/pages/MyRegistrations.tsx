@@ -127,7 +127,7 @@ export default function MyRegistrations() {
             cta={
               <Button asChild className="rounded-xl btn-civic gap-2">
                 <Link to="/registration">
-                  <Plus className="h-4 w-4" /> Start an application
+                  <Plus className="h-4 w-4" /> Start a registration
                 </Link>
               </Button>
             }
