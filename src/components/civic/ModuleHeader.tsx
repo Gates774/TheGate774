@@ -41,6 +41,13 @@ export function ModuleHeader({ title, action }: Props) {
         </div>
       }
       title={null}
+      subtitle={
+        title ? (
+          <span className="block font-heading font-bold tracking-tight text-white text-3xl sm:text-4xl md:text-5xl leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+            {title}
+          </span>
+        ) : undefined
+      }
       topRight={action}
     />
   );
