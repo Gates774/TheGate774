@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import {
   Loader2,
   Send,
@@ -15,6 +16,8 @@ import {
   ShieldCheck,
   Briefcase,
   Check,
+  Copy,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,6 +53,7 @@ export default function Requests() {
   const [residenceLga, setResidenceLga] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
+  const [referenceCode, setReferenceCode] = useState<string | null>(null);
 
   const category = useMemo(
     () => REQUEST_CATEGORIES.find((c) => c.id === categoryId) ?? null,
@@ -66,6 +70,7 @@ export default function Requests() {
 
   const reset = () => {
     setAnalysis(null);
+    setReferenceCode(null);
     setCategoryId("");
     setSubId("");
     setDescription("");
@@ -98,7 +103,36 @@ export default function Requests() {
       });
       if (error) throw error;
       if (!data?.ok || !data?.analysis) throw new Error("No service guide returned");
-      setAnalysis(data.analysis as ComplaintAnalysis);
+      const guide = data.analysis as ComplaintAnalysis;
+
+      // Persist (best-effort: only when signed in)
+      const { data: auth } = await supabase.auth.getUser();
+      if (auth?.user) {
+        const { data: inserted, error: insErr } = await supabase
+          .from("service_requests")
+          .insert({
+            user_id: auth.user.id,
+            category_id: category.id,
+            category_label: category.label,
+            subcategory_id: subcategory.id,
+            subcategory_label: subcategory.label,
+            state: residenceState || null,
+            lga: residenceLga || null,
+            notes: description.trim() || null,
+            responsible_authority: (guide as { responsible_authority?: string })?.responsible_authority ?? null,
+            ai_analysis: guide as unknown as any,
+            status: "guide_generated",
+          })
+          .select("reference_code")
+          .single();
+        if (insErr) {
+          // non-blocking — still show the guide
+          console.warn("Could not save request:", insErr.message);
+        } else if (inserted?.reference_code) {
+          setReferenceCode(inserted.reference_code);
+        }
+      }
+      setAnalysis(guide);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not generate your service guide");
     } finally {
@@ -117,7 +151,18 @@ export default function Requests() {
         <link rel="canonical" href="https://thegate774app.lovable.app/requests" />
       </Helmet>
 
-      <ModuleHeader eyebrow="Module 02 · Requests" title="Request a Service" />
+      <ModuleHeader
+        eyebrow="Module 02 · Requests"
+        title="Request a Service"
+        action={
+          <Link
+            to="/my-requests"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
+          >
+            <History className="h-3.5 w-3.5" strokeWidth={1.75} /> My requests
+          </Link>
+        }
+      />
 
       <section className="container max-w-5xl py-10 space-y-10">
         {!analysis && (
@@ -269,6 +314,43 @@ export default function Requests() {
 
         {analysis && (
           <div className="space-y-4 animate-fade-in">
+            {referenceCode && (
+              <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                    <Check className="h-4 w-4" strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-semibold">Service guide saved</div>
+                    <div className="text-xs text-muted-foreground">
+                      Keep this reference for your records. You can revisit the full guide in My requests.
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <code className="px-3 py-2 rounded-lg bg-background border border-border text-sm font-mono">
+                    {referenceCode}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg gap-1.5"
+                    onClick={() => {
+                      navigator.clipboard.writeText(referenceCode);
+                      toast.success("Reference code copied");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copy
+                  </Button>
+                  <Link
+                    to="/my-requests"
+                    className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
+                  >
+                    <History className="h-3.5 w-3.5" /> View my requests
+                  </Link>
+                </div>
+              </div>
+            )}
             <ComplaintReportCard analysis={analysis} eyebrow="Your Service Guide" />
             <div className="flex justify-end">
               <Button variant="outline" onClick={reset} className="rounded-xl gap-2">
