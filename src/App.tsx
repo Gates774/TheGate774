@@ -16,6 +16,7 @@ import TrackReport from "./pages/TrackReport";
 import Application from "./pages/Application";
 import MyApplications from "./pages/MyApplications";
 import Registration from "./pages/Registration";
+import MyRegistrations from "./pages/MyRegistrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/application" element={<Application />} />
             <Route path="/my-applications" element={<MyApplications />} />
             <Route path="/registration" element={<Registration />} />
+            <Route path="/my-registrations" element={<MyRegistrations />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
