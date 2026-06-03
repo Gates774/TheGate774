@@ -84,16 +84,16 @@ export default function MyRegistrations() {
         <title>My Registrations — THE GATE®</title>
         <meta
           name="description"
-          content="Revisit every Nigerian government document, licence and permit application guide you've generated through THE GATE®."
+          content="Revisit every Nigerian government document, licence and permit registration guide you've generated through THE GATE®."
         />
       </Helmet>
 
       <ModuleHeader
-        eyebrow="Module 05 · Registration"
+        eyebrow="Module 06 · Registration"
         title="My Registrations"
         action={
           <Link
-            to="/application"
+            to="/registration"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={1.75} /> New application
@@ -111,7 +111,7 @@ export default function MyRegistrations() {
         {!loading && authed === false && (
           <EmptyCard
             title="Sign in to view your registrations"
-            body="You need to be signed in to see the application guides you've generated."
+            body="You need to be signed in to see the registration guides you've generated."
             cta={
               <Button asChild className="rounded-xl btn-civic">
                 <Link to="/auth">Sign in</Link>
@@ -123,10 +123,10 @@ export default function MyRegistrations() {
         {!loading && authed && rows.length === 0 && (
           <EmptyCard
             title="No saved registrations yet"
-            body="Every application guide you generate is saved here so you can return to documents, fees and the issuing office."
+            body="Every registration guide you generate is saved here so you can return to documents, fees and the issuing office."
             cta={
               <Button asChild className="rounded-xl btn-civic gap-2">
-                <Link to="/application">
+                <Link to="/registration">
                   <Plus className="h-4 w-4" /> Start an application
                 </Link>
               </Button>
