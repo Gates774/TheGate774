@@ -21,19 +21,20 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
-type RequestRow = Database["public"]["Tables"]["service_requests"]["Row"];
+type ApplicationRow = Database["public"]["Tables"]["applications"]["Row"];
 
 const STATUS_LABEL: Record<string, string> = {
   guide_generated: "Guide ready",
   in_progress: "In progress",
-  submitted_to_authority: "With authority",
+  submitted_to_authority: "Submitted",
+  approved: "Approved",
   completed: "Completed",
   cancelled: "Cancelled",
 };
 
-export default function MyRequests() {
+export default function MyApplications() {
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<RequestRow[]>([]);
+  const [rows, setRows] = useState<ApplicationRow[]>([]);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -49,12 +50,12 @@ export default function MyRequests() {
       }
       setAuthed(true);
       const { data, error } = await supabase
-        .from("service_requests")
+        .from("applications")
         .select("*")
         .order("created_at", { ascending: false });
       if (!active) return;
       if (error) toast.error(error.message);
-      setRows((data ?? []) as RequestRow[]);
+      setRows((data ?? []) as ApplicationRow[]);
       setLoading(false);
     })();
     return () => {
@@ -65,7 +66,7 @@ export default function MyRequests() {
   const remove = async (id: string) => {
     const prev = rows;
     setRows(rows.filter((r) => r.id !== id));
-    const { error } = await supabase.from("service_requests").delete().eq("id", id);
+    const { error } = await supabase.from("applications").delete().eq("id", id);
     if (error) {
       setRows(prev);
       toast.error("Could not delete");
@@ -80,22 +81,22 @@ export default function MyRequests() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-secondary/40 via-background to-background">
       <Helmet>
-        <title>My Requests — THE GATE®</title>
+        <title>My Applications — THE GATE®</title>
         <meta
           name="description"
-          content="Revisit every Nigerian government service guide you've generated through THE GATE®, with the responsible MDA and next steps."
+          content="Revisit every Nigerian government document, licence and permit application guide you've generated through THE GATE®."
         />
       </Helmet>
 
       <ModuleHeader
-        eyebrow="Module 02 · Requests"
-        title="My Requests"
+        eyebrow="Module 05 · Application"
+        title="My Applications"
         action={
           <Link
-            to="/requests"
+            to="/application"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.75} /> New request
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.75} /> New application
           </Link>
         }
       />
@@ -103,14 +104,14 @@ export default function MyRequests() {
       <section className="container max-w-3xl py-10 space-y-4">
         {loading && (
           <div className="flex items-center justify-center py-20 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading your requests…
+            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading your applications…
           </div>
         )}
 
         {!loading && authed === false && (
           <EmptyCard
-            title="Sign in to view your requests"
-            body="You need to be signed in to see the service guides you've generated."
+            title="Sign in to view your applications"
+            body="You need to be signed in to see the application guides you've generated."
             cta={
               <Button asChild className="rounded-xl btn-civic">
                 <Link to="/auth">Sign in</Link>
@@ -121,12 +122,12 @@ export default function MyRequests() {
 
         {!loading && authed && rows.length === 0 && (
           <EmptyCard
-            title="No saved requests yet"
-            body="Every service guide you generate is saved here so you can return to the MDA contact and next steps."
+            title="No saved applications yet"
+            body="Every application guide you generate is saved here so you can return to documents, fees and the issuing office."
             cta={
               <Button asChild className="rounded-xl btn-civic gap-2">
-                <Link to="/requests">
-                  <Plus className="h-4 w-4" /> Start a request
+                <Link to="/application">
+                  <Plus className="h-4 w-4" /> Start an application
                 </Link>
               </Button>
             }
@@ -197,9 +198,9 @@ export default function MyRequests() {
                       </div>
                     )}
                     {analysis ? (
-                      <ComplaintReportCard analysis={analysis} eyebrow="Saved Service Guide" />
+                      <ComplaintReportCard analysis={analysis} eyebrow="Saved Application Guide" />
                     ) : (
-                      <p className="text-sm text-muted-foreground">No saved guide for this request.</p>
+                      <p className="text-sm text-muted-foreground">No saved guide for this application.</p>
                     )}
                     {r.resolution_notes && (
                       <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
