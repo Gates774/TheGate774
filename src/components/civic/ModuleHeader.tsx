@@ -22,32 +22,32 @@ export function ModuleHeader({ title, action }: Props) {
     <CivicHero
       compact
       pill={
-        <div className="relative flex items-center justify-center">
-          <span
-            aria-hidden
-            className="absolute inset-0 -m-4 sm:-m-5 md:-m-6 rounded-full bg-[hsl(var(--accent))]/20 blur-2xl"
-          />
-          <span
-            aria-hidden
-            className="absolute inset-0 -m-1.5 sm:-m-2 rounded-full ring-1 ring-white/20"
-          />
-          <img
-            src={gate774Logo.url}
-            alt={title ? `${title} — THE GATE® 774` : "THE GATE® 774"}
-            className="relative h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.4)] animate-fade-in"
-            loading="eager"
-            decoding="async"
-          />
+        <div className="flex flex-col items-center gap-4 sm:gap-5">
+          <div className="relative flex items-center justify-center">
+            <span
+              aria-hidden
+              className="absolute inset-0 -m-4 sm:-m-5 md:-m-6 rounded-full bg-[hsl(var(--accent))]/20 blur-2xl"
+            />
+            <span
+              aria-hidden
+              className="absolute inset-0 -m-1.5 sm:-m-2 rounded-full ring-1 ring-white/20"
+            />
+            <img
+              src={gate774Logo.url}
+              alt={title ? `${title} — THE GATE® 774` : "THE GATE® 774"}
+              className="relative h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.4)] animate-fade-in"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+          {title && (
+            <h1 className="font-heading font-bold tracking-tight text-white text-center leading-[1.05] text-[1.75rem] sm:text-4xl md:text-5xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)] max-w-[18ch] sm:max-w-none">
+              {title}
+            </h1>
+          )}
         </div>
       }
       title={null}
-      subtitle={
-        title ? (
-          <span className="block font-heading font-bold tracking-tight text-white text-3xl sm:text-4xl md:text-5xl leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
-            {title}
-          </span>
-        ) : undefined
-      }
       topRight={action}
     />
   );
