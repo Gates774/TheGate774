@@ -2,9 +2,22 @@ import { Apple, Play, Sparkles } from "lucide-react";
 
 export function ModuleFooter() {
   return (
-    <footer className="relative mt-16 text-primary-foreground overflow-hidden">
-      {/* Deep green base + soft vignette */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-[hsl(var(--civic-green-dark))] via-primary to-[hsl(var(--civic-green-dark))]" />
+    <footer
+      className="relative mt-16 text-primary-foreground overflow-hidden border-t-4 border-[hsl(var(--accent))]"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(var(--civic-green-dark)) 0%, hsl(var(--civic-green)) 50%, hsl(var(--civic-green-dark)) 100%)",
+      }}
+    >
+      {/* Diagonal stripe pattern */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.12]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(135deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 14px)",
+        }}
+      />
       <div aria-hidden className="absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-[900px] rounded-full bg-white/10 blur-3xl" />
       <Sparkles
         aria-hidden
