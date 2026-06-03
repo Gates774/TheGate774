@@ -2081,6 +2081,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_volunteer_contact: {
+        Args: { _opportunity_id: string }
+        Returns: {
+          contact_email: string
+          contact_phone: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
