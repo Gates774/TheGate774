@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import {
   Loader2,
   Send,
@@ -16,6 +17,8 @@ import {
   Laptop,
   Check,
   ShieldCheck,
+  Copy,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,9 +26,11 @@ import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { ComplaintReportCard, type ComplaintAnalysis } from "@/components/civic/ComplaintReportCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ReportEvidenceUploader } from "@/components/civic/ReportEvidenceUploader";
 import { REPORTING_CATEGORIES } from "@/data/reportingCategories";
 import { NIGERIA_LGAS } from "@/data/nigeriaLgas";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,8 +56,13 @@ export default function Reporting() {
   const [residenceState, setResidenceState] = useState<string>("");
   const [residenceLga, setResidenceLga] = useState<string>("");
   const [anonymous, setAnonymous] = useState(true);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [evidence, setEvidence] = useState<string[]>([]);
+  const [folder] = useState(() => `pending-${crypto.randomUUID()}`);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
+  const [trackingCode, setTrackingCode] = useState<string | null>(null);
 
   const category = useMemo(
     () => REPORTING_CATEGORIES.find((c) => c.id === categoryId) ?? null,
@@ -65,13 +75,21 @@ export default function Reporting() {
   const states = Object.keys(NIGERIA_LGAS);
   const lgas = residenceState ? NIGERIA_LGAS[residenceState] ?? [] : [];
 
-  const canSubmit = Boolean(category && subcategory) && description.trim().length >= 10 && !loading;
+  const canSubmit =
+    Boolean(category && subcategory) &&
+    description.trim().length >= 10 &&
+    !loading &&
+    (anonymous || (fullName.trim().length > 0 && phone.trim().length > 0));
 
   const reset = () => {
     setAnalysis(null);
+    setTrackingCode(null);
     setCategoryId("");
     setSubId("");
     setDescription("");
+    setEvidence([]);
+    setFullName("");
+    setPhone("");
   };
 
   const submit = async () => {
@@ -106,7 +124,35 @@ export default function Reporting() {
       });
       if (error) throw error;
       if (!data?.ok || !data?.analysis) throw new Error("No report routing returned");
-      setAnalysis(data.analysis as ComplaintAnalysis);
+      const routing = data.analysis as ComplaintAnalysis;
+
+      // Persist the report
+      const { data: auth } = await supabase.auth.getUser();
+      const { data: inserted, error: insErr } = await supabase
+        .from("reports")
+        .insert({
+          user_id: anonymous ? null : auth?.user?.id ?? null,
+          is_anonymous: anonymous,
+          action_type: subcategory.label,
+          category: category.label,
+          subcategory: subcategory.label,
+          content,
+          full_name: anonymous ? null : fullName.trim(),
+          phone: anonymous ? null : phone.trim(),
+          state: residenceState || null,
+          lga: residenceLga || null,
+          residence_state: residenceState || null,
+          residence_lga: residenceLga || null,
+          evidence_urls: evidence,
+          ai_analysis: routing as unknown as Record<string, unknown>,
+          status: "submitted",
+        })
+        .select("tracking_code")
+        .single();
+      if (insErr) throw insErr;
+
+      setTrackingCode(inserted?.tracking_code ?? null);
+      setAnalysis(routing);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not route your report");
     } finally {
@@ -125,7 +171,18 @@ export default function Reporting() {
         <link rel="canonical" href="https://thegate774app.lovable.app/reporting" />
       </Helmet>
 
-      <ModuleHeader eyebrow="Module 04 · Reporting" title="Report Misconduct" />
+      <ModuleHeader
+        eyebrow="Module 04 · Reporting"
+        title="Report Misconduct"
+        secondaryAction={
+          <Link
+            to="/track-report"
+            className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
+          >
+            <Search className="h-3.5 w-3.5" strokeWidth={1.75} /> Track a report
+          </Link>
+        }
+      />
 
       <section className="container max-w-5xl py-10 space-y-10">
         {!analysis && (
@@ -277,6 +334,38 @@ export default function Reporting() {
                   <Switch checked={anonymous} onCheckedChange={setAnonymous} />
                 </div>
 
+                {!anonymous && (
+                  <div className="mt-3 grid sm:grid-cols-2 gap-3 animate-fade-in">
+                    <div>
+                      <Label>Your full name</Label>
+                      <Input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Surname First-name"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <Label>Phone number</Label>
+                      <Input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="e.g. +234 803 000 0000"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 rounded-xl border border-border bg-card p-4">
+                  <Label>Evidence (optional)</Label>
+                  <ReportEvidenceUploader
+                    folder={folder}
+                    paths={evidence}
+                    onChange={setEvidence}
+                  />
+                </div>
+
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-5 mt-4 border-t border-border/60">
                   <p className="text-xs text-muted-foreground">
                     We'll route this report to the right oversight body and tell you how to follow up.
@@ -297,6 +386,43 @@ export default function Reporting() {
 
         {analysis && (
           <div className="space-y-4 animate-fade-in">
+            {trackingCode && (
+              <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                    <Check className="h-4 w-4" strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-semibold">Report received</div>
+                    <div className="text-xs text-muted-foreground">
+                      Save your tracking code. You'll need it to check status later.
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <code className="px-3 py-2 rounded-lg bg-background border border-border text-sm font-mono">
+                    {trackingCode}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg gap-1.5"
+                    onClick={() => {
+                      navigator.clipboard.writeText(trackingCode);
+                      toast.success("Tracking code copied");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copy
+                  </Button>
+                  <Link
+                    to={`/track-report?code=${trackingCode}`}
+                    className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1.5"
+                  >
+                    <Search className="h-3.5 w-3.5" /> Track status
+                  </Link>
+                </div>
+              </div>
+            )}
             <ComplaintReportCard analysis={analysis} eyebrow="Your Report Routing" />
             <div className="flex justify-end">
               <Button variant="outline" onClick={reset} className="rounded-xl gap-2">
