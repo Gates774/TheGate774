@@ -226,7 +226,7 @@ export default function Registration() {
                     return (
                       <button
                         key={s.id}
-                        onClick(() => {
+                        onClick={() => {
                           setSubId(s.id);
                         }}
                         className={cn(
