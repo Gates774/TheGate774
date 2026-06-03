@@ -232,7 +232,7 @@ export type Database = {
           subcategory_id: string | null
           subcategory_label: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           ai_analysis?: Json | null
@@ -250,7 +250,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           ai_analysis?: Json | null
@@ -268,7 +268,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -470,7 +470,7 @@ export type Database = {
           title: string
           updated_at: string
           urgency: Database["public"]["Enums"]["complaint_urgency"]
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -493,7 +493,7 @@ export type Database = {
           title: string
           updated_at?: string
           urgency?: Database["public"]["Enums"]["complaint_urgency"]
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -516,7 +516,7 @@ export type Database = {
           title?: string
           updated_at?: string
           urgency?: Database["public"]["Enums"]["complaint_urgency"]
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -658,7 +658,7 @@ export type Database = {
           subcategory_id: string | null
           subcategory_label: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           ai_analysis?: Json | null
@@ -674,7 +674,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           ai_analysis?: Json | null
@@ -690,7 +690,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1364,7 +1364,7 @@ export type Database = {
           subcategory_id: string | null
           subcategory_label: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           ai_analysis?: Json | null
@@ -1382,7 +1382,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           ai_analysis?: Json | null
@@ -1400,7 +1400,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1502,7 +1502,7 @@ export type Database = {
           subcategory_id: string | null
           subcategory_label: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           ai_analysis?: Json | null
@@ -1520,7 +1520,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           ai_analysis?: Json | null
@@ -1538,7 +1538,7 @@ export type Database = {
           subcategory_id?: string | null
           subcategory_label?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
