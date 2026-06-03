@@ -107,27 +107,24 @@ export default function Registration() {
       setAnalysis(a);
 
       try {
-        const { data: u } = await supabase.auth.getUser();
-        if (u.user) {
-          const { data: row, error: insErr } = await supabase
-            .from("registrations")
-            .insert({
-              user_id: u.user.id,
-              reference_code: "",
-              category_id: category.id,
-              category_label: category.label,
-              subcategory_id: subcategory.id,
-              subcategory_label: subcategory.label,
-              notes: description.trim() || null,
-              state: residenceState || null,
-              lga: residenceLga || null,
-              responsible_authority: subcategory.hint || null,
-              ai_analysis: a as any,
-            })
-            .select("reference_code")
-            .single();
-          if (!insErr && row?.reference_code) setReferenceCode(row.reference_code);
-        }
+        const { data: row, error: insErr } = await supabase
+          .from("registrations")
+          .insert({
+            user_id: null,
+            reference_code: "",
+            category_id: category.id,
+            category_label: category.label,
+            subcategory_id: subcategory.id,
+            subcategory_label: subcategory.label,
+            notes: description.trim() || null,
+            state: residenceState || null,
+            lga: residenceLga || null,
+            responsible_authority: subcategory.hint || null,
+            ai_analysis: a as any,
+          })
+          .select("reference_code")
+          .single();
+        if (!insErr && row?.reference_code) setReferenceCode(row.reference_code);
       } catch {
         /* non-blocking */
       }
@@ -152,14 +149,6 @@ export default function Registration() {
       <ModuleHeader
         eyebrow="Module 06 · Registration"
         title="Register for a Scheme"
-        action={
-          <Link
-            to="/my-registrations"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/90 hover:text-white bg-white/10 border border-white/25 backdrop-blur-sm hover:border-white/45 transition-all"
-          >
-            <History className="h-3.5 w-3.5" strokeWidth={1.75} /> My registrations
-          </Link>
-        }
       />
 
       <section className="container max-w-5xl py-10 space-y-10">
@@ -328,11 +317,6 @@ export default function Registration() {
                     }}
                   >
                     <Copy className="h-3.5 w-3.5" /> Copy
-                  </Button>
-                  <Button asChild size="sm" variant="ghost" className="rounded-xl gap-1.5 h-8">
-                    <Link to="/my-registrations">
-                      <History className="h-3.5 w-3.5" /> View history
-                    </Link>
                   </Button>
                 </div>
               </div>
