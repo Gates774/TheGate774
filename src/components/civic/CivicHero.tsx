@@ -11,13 +11,15 @@ interface Props {
   ctas?: ReactNode;
   /** Optional element to anchor top-left (e.g. Back button). */
   topLeft?: ReactNode;
+  /** Optional element to anchor top-right (e.g. secondary action). */
+  topRight?: ReactNode;
 }
 
 /**
  * Shared deep-green hero used by Landing and every module page.
  * Solid civic green, subtle diagonal stripes + faint circles, centered.
  */
-export function CivicHero({ pill, title, subtitle, ctas, topLeft }: Props) {
+export function CivicHero({ pill, title, subtitle, ctas, topLeft, topRight }: Props) {
   return (
     <header
       className="relative overflow-hidden text-white border-b-4 border-[hsl(var(--accent))]"
@@ -55,6 +57,9 @@ export function CivicHero({ pill, title, subtitle, ctas, topLeft }: Props) {
 
       {topLeft && (
         <div className="absolute top-5 left-4 md:left-8 z-10">{topLeft}</div>
+      )}
+      {topRight && (
+        <div className="absolute top-5 right-4 md:right-8 z-10">{topRight}</div>
       )}
 
       <div className="container max-w-4xl pt-16 md:pt-20 pb-16 md:pb-24 flex flex-col items-center text-center">
