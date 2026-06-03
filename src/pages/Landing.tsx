@@ -28,6 +28,7 @@ const Landing = () => {
   const go = (id: string) => {
     if (id === "complaints") navigate("/complaints");
     else if (id === "request") navigate("/requests");
+    else if (id === "enquiries") navigate("/enquiries");
     else toast("This module ships in the next phase.");
   };
   return (
