@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Complaints from "./pages/Complaints";
+import MyComplaints from "./pages/MyComplaints";
 import Requests from "./pages/Requests";
 import Enquiries from "./pages/Enquiries";
 import Reporting from "./pages/Reporting";
@@ -25,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/complaints" element={<Complaints />} />
+            <Route path="/my-complaints" element={<MyComplaints />} />
             <Route path="/requests" element={<Requests />} />
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/reporting" element={<Reporting />} />
