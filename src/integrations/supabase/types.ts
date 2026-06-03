@@ -1293,48 +1293,81 @@ export type Database = {
       reports: {
         Row: {
           action_type: string
+          admin_notes: string | null
           ai_analysis: Json | null
+          category: string | null
           content: string
           created_at: string
+          deleted_at: string | null
           evidence_urls: string[] | null
-          full_name: string
+          full_name: string | null
           id: string
+          is_anonymous: boolean
+          lga: string | null
           origin_lga: string | null
           origin_state: string | null
-          phone: string
+          phone: string | null
           residence_lga: string | null
           residence_state: string | null
+          resolution_notes: string | null
+          state: string | null
           status: string
+          subcategory: string | null
+          tracking_code: string | null
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
           action_type: string
+          admin_notes?: string | null
           ai_analysis?: Json | null
+          category?: string | null
           content: string
           created_at?: string
+          deleted_at?: string | null
           evidence_urls?: string[] | null
-          full_name: string
+          full_name?: string | null
           id?: string
+          is_anonymous?: boolean
+          lga?: string | null
           origin_lga?: string | null
           origin_state?: string | null
-          phone: string
+          phone?: string | null
           residence_lga?: string | null
           residence_state?: string | null
+          resolution_notes?: string | null
+          state?: string | null
           status?: string
+          subcategory?: string | null
+          tracking_code?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
           action_type?: string
+          admin_notes?: string | null
           ai_analysis?: Json | null
+          category?: string | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
           evidence_urls?: string[] | null
-          full_name?: string
+          full_name?: string | null
           id?: string
+          is_anonymous?: boolean
+          lga?: string | null
           origin_lga?: string | null
           origin_state?: string | null
-          phone?: string
+          phone?: string | null
           residence_lga?: string | null
           residence_state?: string | null
+          resolution_notes?: string | null
+          state?: string | null
           status?: string
+          subcategory?: string | null
+          tracking_code?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1933,6 +1966,21 @@ export type Database = {
       setup_admin_2fa: {
         Args: { p_recovery_codes: string[]; p_totp_secret: string }
         Returns: boolean
+      }
+      track_report_by_code: {
+        Args: { p_code: string }
+        Returns: {
+          action_type: string
+          category: string
+          created_at: string
+          lga: string
+          resolution_notes: string
+          state: string
+          status: string
+          subcategory: string
+          tracking_code: string
+          updated_at: string
+        }[]
       }
       verify_admin_recovery_code: { Args: { p_code: string }; Returns: boolean }
       verify_admin_totp: { Args: { p_code: string }; Returns: boolean }
