@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
 import { ComplaintReportCard, type ComplaintAnalysis } from "@/components/civic/ComplaintReportCard";
+import { StepCarousel } from "@/components/civic/StepCarousel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +64,7 @@ export default function Reporting() {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ComplaintAnalysis | null>(null);
   const [trackingCode, setTrackingCode] = useState<string | null>(null);
+  const [step, setStep] = useState(0);
 
   const category = useMemo(
     () => REPORTING_CATEGORIES.find((c) => c.id === categoryId) ?? null,
@@ -90,6 +92,7 @@ export default function Reporting() {
     setEvidence([]);
     setFullName("");
     setPhone("");
+    setStep(0);
   };
 
   const submit = async () => {
