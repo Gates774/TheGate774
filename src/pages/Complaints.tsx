@@ -118,7 +118,7 @@ export default function Complaints() {
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
           evidence_urls: evidence,
-          ai_analysis: a as unknown as Record<string, unknown>,
+          ai_analysis: a as never,
         })
         .select("reference_code")
         .single();
