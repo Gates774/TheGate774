@@ -268,3 +268,34 @@
     to { opacity: 1; transform: translateX(0); }
   }
 }
+
+/* ===== Print: civic brief export ===== */
+@media print {
+  @page {
+    size: A4;
+    margin: 0.6in 0.55in;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .print-root,
+  .print-root * {
+    visibility: visible !important;
+  }
+  .print-root {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

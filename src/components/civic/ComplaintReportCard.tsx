@@ -10,8 +10,11 @@ import {
   AlertCircle,
   Link2,
   HelpCircle,
+  Printer,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import logo from "@/assets/gate774-logo.webp";
 
 export interface ComplaintAnalysis {
   tier?: "federal" | "state" | "local";
@@ -74,44 +77,81 @@ export function ComplaintReportCard({
   const refNo = makeRef(tier);
   const issued = formatToday();
 
+  const handleExport = () => {
+    if (typeof document === "undefined") return;
+    const prev = document.title;
+    document.title = `THE GATE - ${eyebrow} - ${refNo}`;
+    window.print();
+    setTimeout(() => {
+      document.title = prev;
+    }, 500);
+  };
+
   return (
-    <article className="relative overflow-hidden rounded-sm border border-foreground/15 bg-card shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_24px_60px_-30px_hsl(var(--foreground)/0.25)] animate-slide-up print:shadow-none">
+    <article className="print-root relative overflow-hidden rounded-sm border border-foreground/15 bg-card shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_24px_60px_-30px_hsl(var(--foreground)/0.25)] animate-slide-up print:shadow-none">
+      {/* Export action — hidden in print */}
+      <div className="no-print absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleExport}
+          className="h-8 rounded-sm gap-1.5 text-[11px] uppercase tracking-[0.16em] font-semibold border-foreground/25 bg-card/80 backdrop-blur"
+        >
+          <Printer className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Export PDF</span>
+          <span className="sm:hidden">PDF</span>
+        </Button>
+      </div>
+
       {/* Official letterhead */}
       <header className="relative border-b-2 border-foreground/80">
         {/* twin top rules */}
         <div className="absolute top-0 inset-x-0 h-[3px] bg-foreground/80" />
         <div className="absolute top-[5px] inset-x-0 h-px bg-foreground/40" />
 
-        <div className="px-6 sm:px-10 pt-7 pb-5">
-          <div className="flex items-start gap-5">
-            <div className="h-14 w-14 rounded-full border-2 border-foreground/80 bg-card flex items-center justify-center shrink-0">
-              <Icon className="h-7 w-7 text-foreground" strokeWidth={1.5} />
+        <div className="px-4 sm:px-10 pt-7 pb-5">
+          {/* Brand strip */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <img
+              src={logo}
+              alt="THE GATE"
+              className="h-7 w-auto object-contain"
+              loading="lazy"
+            />
+            <span className="text-[10px] tracking-[0.3em] uppercase text-foreground/60 font-semibold">
+              THE GATE®
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left">
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full border-2 border-foreground/80 bg-card flex items-center justify-center shrink-0">
+              <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-foreground" strokeWidth={1.5} />
             </div>
             <div className="flex-1 min-w-0 text-center">
-              <div className="text-[10px] tracking-[0.32em] uppercase text-foreground/60 font-semibold">
+              <div className="text-[10px] tracking-[0.28em] sm:tracking-[0.32em] uppercase text-foreground/60 font-semibold">
                 {meta.label}
               </div>
-              <h2 className="font-heading text-2xl sm:text-[28px] font-bold leading-tight tracking-tight mt-1">
+              <h2 className="font-heading text-xl sm:text-[28px] font-bold leading-tight tracking-tight mt-1 break-words">
                 {authority}
               </h2>
-              <div className="mt-2 text-[11px] tracking-[0.22em] uppercase text-foreground/55">
+              <div className="mt-2 text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em] uppercase text-foreground/55">
                 Office of the {meta.short === "LGA" ? "Chairman" : meta.short === "State" ? "Governor" : "President"}
               </div>
             </div>
-            <div className="h-14 w-14 shrink-0" aria-hidden />
+            <div className="hidden sm:block h-14 w-14 shrink-0" aria-hidden />
           </div>
 
           {/* Brief meta strip */}
-          <div className="mt-6 grid grid-cols-3 gap-0 text-[10px] uppercase tracking-[0.18em] text-foreground/55 border-t border-foreground/15 pt-3">
-            <div>
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-0 text-[10px] uppercase tracking-[0.18em] text-foreground/55 border-t border-foreground/15 pt-3">
+            <div className="text-left">
               <div className="font-semibold text-foreground/70">Ref. No.</div>
-              <div className="mt-0.5 font-mono text-[11px] tracking-normal normal-case text-foreground">{refNo}</div>
+              <div className="mt-0.5 font-mono text-[11px] tracking-normal normal-case text-foreground break-all">{refNo}</div>
             </div>
-            <div className="text-center">
+            <div className="text-left sm:text-center">
               <div className="font-semibold text-foreground/70">Document</div>
               <div className="mt-0.5 text-[11px] tracking-normal normal-case text-foreground">{eyebrow}</div>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <div className="font-semibold text-foreground/70">Issued</div>
               <div className="mt-0.5 text-[11px] tracking-normal normal-case text-foreground">{issued}</div>
             </div>
@@ -120,7 +160,7 @@ export function ComplaintReportCard({
       </header>
 
       {/* Body grid */}
-      <div className="px-6 sm:px-10 py-8 space-y-8">
+      <div className="px-4 sm:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {analysis.confidence && (
           <div className="flex items-center justify-between gap-3 -mt-2">
             <span className="text-[10px] uppercase tracking-[0.24em] text-foreground/55 font-semibold">
@@ -133,7 +173,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.empathy_note && (
-          <p className="font-heading text-[16px] sm:text-[17px] leading-relaxed italic text-foreground/85 border-l-[3px] border-foreground/70 pl-4">
+          <p className="font-heading text-[15px] sm:text-[17px] leading-relaxed italic text-foreground/85 border-l-[3px] border-foreground/70 pl-3 sm:pl-4 print-break-inside-avoid">
             {analysis.empathy_note}
           </p>
         )}
@@ -148,7 +188,7 @@ export function ComplaintReportCard({
         )}
 
         <Section label="01 — Subject of the matter" icon={ScrollText}>
-          <p className="text-[15px] leading-[1.75] text-foreground/90">{analysis.issue_summary ?? analysis.rationale ?? "—"}</p>
+          <p className="text-[14px] sm:text-[15px] leading-[1.7] sm:leading-[1.75] text-foreground/90 break-words">{analysis.issue_summary ?? analysis.rationale ?? "—"}</p>
         </Section>
 
         <Section label="02 — Responsible authority" icon={Landmark}>
@@ -162,13 +202,13 @@ export function ComplaintReportCard({
 
         {steps.length > 0 && (
           <Section label="03 — Recommended course of action" icon={CheckCircle2}>
-            <ol className="space-y-4">
+            <ol className="space-y-3 sm:space-y-4">
               {steps.map((s, i) => (
-                <li key={i} className="flex gap-4 text-[15px] leading-[1.7]">
-                  <span className="shrink-0 font-heading font-bold text-foreground/40 text-lg tabular-nums w-7 pt-0.5">
+                <li key={i} className="flex gap-3 sm:gap-4 text-[14px] sm:text-[15px] leading-[1.7] print-break-inside-avoid">
+                  <span className="shrink-0 font-heading font-bold text-foreground/40 text-base sm:text-lg tabular-nums w-6 sm:w-7 pt-0.5">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-foreground/90 border-l border-foreground/10 pl-4">{s}</span>
+                  <span className="text-foreground/90 border-l border-foreground/10 pl-3 sm:pl-4 break-words min-w-0">{s}</span>
                 </li>
               ))}
             </ol>
@@ -177,11 +217,11 @@ export function ComplaintReportCard({
 
         {analysis.documents_needed && analysis.documents_needed.length > 0 && (
           <Section label="04 — Documents to prepare" icon={FileCheck2}>
-            <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               {analysis.documents_needed.map((d) => (
                 <li key={d} className="flex items-start gap-3 text-[14px] leading-relaxed py-1 border-b border-dashed border-foreground/10">
                   <span className="text-foreground/40 text-xs mt-1 shrink-0">▢</span>
-                  <span className="text-foreground/85">{d}</span>
+                  <span className="text-foreground/85 break-words min-w-0">{d}</span>
                 </li>
               ))}
             </ul>
@@ -190,10 +230,10 @@ export function ComplaintReportCard({
 
         {analysis.escalation_path && analysis.escalation_path.length > 0 && (
           <Section label="05 — Escalation pathway" icon={ArrowUpRight}>
-            <ol className="space-y-2 border-l border-foreground/15 pl-5">
+            <ol className="space-y-2 border-l border-foreground/15 pl-4 sm:pl-5">
               {analysis.escalation_path.map((e, i) => (
-                <li key={i} className="relative text-[14px] leading-relaxed text-foreground/85">
-                  <span className="absolute -left-[27px] top-1.5 h-2 w-2 rounded-full bg-card border-2 border-foreground/60" />
+                <li key={i} className="relative text-[13.5px] sm:text-[14px] leading-relaxed text-foreground/85 break-words">
+                  <span className="absolute -left-[22px] sm:-left-[27px] top-1.5 h-2 w-2 rounded-full bg-card border-2 border-foreground/60" />
                   <span className="font-mono text-[11px] text-foreground/50 mr-2">{String(i + 1).padStart(2, "0")}</span>
                   {e}
                 </li>
@@ -203,12 +243,12 @@ export function ComplaintReportCard({
         )}
 
         {analysis.rights_reminder && (
-          <div className="relative p-5 sm:p-6 bg-foreground/[0.03] border-l-[3px] border-foreground/70">
+          <div className="relative p-4 sm:p-6 bg-foreground/[0.03] border-l-[3px] border-foreground/70 print-break-inside-avoid">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="h-4 w-4 text-foreground/70" strokeWidth={1.5} />
               <div className="text-[10px] uppercase tracking-[0.24em] text-foreground/60 font-bold">Citizen's right</div>
             </div>
-            <p className="text-[14.5px] leading-[1.7] text-foreground/90">{analysis.rights_reminder}</p>
+            <p className="text-[14px] sm:text-[14.5px] leading-[1.7] text-foreground/90 break-words">{analysis.rights_reminder}</p>
           </div>
         )}
 
@@ -228,7 +268,7 @@ export function ComplaintReportCard({
                       {s.name}
                     </a>
                   ) : (
-                    <span>{s.name}</span>
+                    <span className="break-words min-w-0">{s.name}</span>
                   )}
                 </li>
               ))}
@@ -238,9 +278,12 @@ export function ComplaintReportCard({
       </div>
 
       {/* Official footer */}
-      <footer className="border-t border-foreground/15 px-6 sm:px-10 py-4 bg-foreground/[0.02] flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-[0.22em] text-foreground/55">
-        <span>Issued by THE GATE®</span>
-        <span className="font-mono normal-case tracking-normal text-foreground/45">{refNo}</span>
+      <footer className="border-t border-foreground/15 px-4 sm:px-10 py-4 bg-foreground/[0.02] flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.22em] text-foreground/55">
+        <span className="flex items-center gap-2">
+          <img src={logo} alt="" className="h-4 w-auto object-contain" />
+          Issued by THE GATE®
+        </span>
+        <span className="font-mono normal-case tracking-normal text-foreground/45 break-all">{refNo}</span>
         <span>Page 01 / 01</span>
       </footer>
     </article>
@@ -260,7 +303,7 @@ function Section({
     <section>
       <header className="flex items-center gap-3 mb-4 pb-2 border-b border-foreground/15">
         <Icon className="h-3.5 w-3.5 text-foreground/55" strokeWidth={1.5} />
-        <h3 className="text-[11px] uppercase tracking-[0.26em] font-bold text-foreground/75">{label}</h3>
+        <h3 className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.26em] font-bold text-foreground/75">{label}</h3>
         <span className="flex-1 h-px bg-foreground/10" />
       </header>
       {children}
@@ -270,9 +313,9 @@ function Section({
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="grid grid-cols-[180px_1fr] gap-4 py-3">
-      <dt className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-semibold pt-0.5">{label}</dt>
-      <dd className={`text-[14.5px] text-foreground leading-snug ${mono ? "font-mono text-[13px]" : "font-medium"}`}>{value}</dd>
+    <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-1 sm:gap-4 py-3">
+      <dt className="text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] text-foreground/55 font-semibold pt-0.5">{label}</dt>
+      <dd className={`text-[14px] sm:text-[14.5px] text-foreground leading-snug break-words ${mono ? "font-mono text-[12.5px] sm:text-[13px]" : "font-medium"}`}>{value}</dd>
     </div>
   );
 }
