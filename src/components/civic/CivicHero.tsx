@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 
 interface Props {
-  /** Small uppercase pill above the title. */
-  pill: string;
+  /** Small uppercase pill above the title. Accepts a string or any node (e.g. a logo). */
+  pill?: ReactNode;
   /** Big white serif title. */
   title: ReactNode;
   /** Optional sub-headline under the title. */
@@ -63,10 +63,14 @@ export function CivicHero({ pill, title, subtitle, ctas, topLeft, topRight }: Pr
       )}
 
       <div className="container max-w-4xl pt-16 md:pt-20 pb-16 md:pb-24 flex flex-col items-center text-center">
-        {/* Constitutional pill */}
-        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/30 bg-white/[0.04] text-[10px] md:text-[11px] font-semibold tracking-[0.18em] uppercase text-white/85 backdrop-blur-sm">
-          {pill}
-        </span>
+        {/* Pill slot — string renders as a constitutional pill, node renders as-is (e.g. a logo). */}
+        {typeof pill === "string" ? (
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/30 bg-white/[0.04] text-[10px] md:text-[11px] font-semibold tracking-[0.18em] uppercase text-white/85 backdrop-blur-sm">
+            {pill}
+          </span>
+        ) : (
+          pill
+        )}
 
         {/* Title — large serif, white */}
         <h1 className="mt-7 font-heading font-bold tracking-tight text-white leading-[1.02] text-5xl md:text-7xl lg:text-[5.5rem] animate-slide-up">

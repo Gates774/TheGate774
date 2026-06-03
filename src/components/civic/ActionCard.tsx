@@ -14,7 +14,7 @@ export function ActionCard({ label, desc, icon: Icon, onClick }: Props) {
     <button
       onClick={onClick}
       className={cn(
-        "group relative w-full text-left p-6 rounded-2xl border border-border bg-card overflow-hidden",
+        "group relative w-full h-full text-left p-6 rounded-2xl border border-border bg-card overflow-hidden flex flex-col",
         "hover:border-primary/50 transition-all duration-500 hover:-translate-y-1.5",
         "shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-civic"
       )}
