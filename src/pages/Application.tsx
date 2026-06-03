@@ -114,6 +114,7 @@ export default function Application() {
             .from("applications")
             .insert({
               user_id: u.user.id,
+              reference_code: "",
               category_id: category.id,
               category_label: category.label,
               subcategory_id: subcategory.id,
