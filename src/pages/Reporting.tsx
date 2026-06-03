@@ -190,8 +190,17 @@ export default function Reporting() {
               </div>
             </div>
 
-            <Step number={1} label="Choose what you're reporting">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <StepCarousel
+              step={step}
+              onStepChange={setStep}
+              steps={[
+                {
+                  id: "category",
+                  label: "Category",
+                  canNext: Boolean(category),
+                  content: (
+                    <StepFrame title="Choose what you're reporting">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {REPORTING_CATEGORIES.map((c) => {
                   const Icon = ICONS[c.icon];
                   const active = c.id === categoryId;
@@ -201,6 +210,7 @@ export default function Reporting() {
                       onClick={() => {
                         setCategoryId(c.id);
                         setSubId("");
+                        setStep(1);
                       }}
                       className={cn(
                         "group relative text-left p-4 rounded-2xl border bg-card transition-all duration-300",
@@ -229,18 +239,32 @@ export default function Reporting() {
                     </button>
                   );
                 })}
-              </div>
-            </Step>
-
-            {category && (
-              <Step number={2} label={`Pick the specific offence in ${category.label}`}>
-                <div className="grid sm:grid-cols-2 gap-2.5 animate-fade-in">
-                  {category.subcategories.map((s) => {
+                      </div>
+                    </StepFrame>
+                  ),
+                },
+                {
+                  id: "specific",
+                  label: "Offence",
+                  canNext: Boolean(subcategory),
+                  content: (
+                    <StepFrame
+                      title={
+                        category
+                          ? `Pick the specific offence in ${category.label}`
+                          : "Pick the specific offence"
+                      }
+                    >
+                      <div className="grid sm:grid-cols-2 gap-2.5">
+                        {(category?.subcategories ?? []).map((s) => {
                     const active = s.id === subId;
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setSubId(s.id)}
+                        onClick={() => {
+                          setSubId(s.id);
+                          setStep(2);
+                        }}
                         className={cn(
                           "text-left p-4 rounded-xl border bg-card transition-all",
                           active
@@ -262,13 +286,17 @@ export default function Reporting() {
                       </button>
                     );
                   })}
-                </div>
-              </Step>
-            )}
-
-            {subcategory && (
-              <Step number={3} label="Describe what happened & where">
-                <div className="grid sm:grid-cols-2 gap-3 animate-fade-in">
+                      </div>
+                    </StepFrame>
+                  ),
+                },
+                {
+                  id: "details",
+                  label: "Details",
+                  hideNext: true,
+                  content: (
+                    <StepFrame title="Describe what happened & where">
+                      <div className="grid sm:grid-cols-2 gap-3">
                   <div>
                     <Label>State where it happened</Label>
                     <Select
@@ -303,7 +331,7 @@ export default function Reporting() {
                   </div>
                 </div>
 
-                <div className="mt-4 animate-fade-in">
+                <div className="mt-4">
                   <Label>What happened? Include who, when, and any evidence you have</Label>
                   <Textarea
                     value={description}
@@ -372,8 +400,11 @@ export default function Reporting() {
                     {loading ? "Routing your report…" : "Submit my report"}
                   </Button>
                 </div>
-              </Step>
-            )}
+                    </StepFrame>
+                  ),
+                },
+              ]}
+            />
           </>
         )}
 
