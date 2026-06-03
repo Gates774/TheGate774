@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Loader2, Send, RotateCcw, MapPin, CheckCircle2, Copy, ListChecks } from "lucide-react";
+import { Loader2, Send, RotateCcw, MapPin, CheckCircle2, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { ModuleHeader } from "@/components/civic/ModuleHeader";
 import { ModuleFooter } from "@/components/civic/ModuleFooter";
@@ -17,7 +17,6 @@ import { NIGERIA_LGAS } from "@/data/nigeriaLgas";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Complaints() {
-  const navigate = useNavigate();
   const [content, setContent] = useState("");
   const [residenceState, setResidenceState] = useState<string>("");
   const [residenceLga, setResidenceLga] = useState<string>("");
@@ -27,20 +26,10 @@ export default function Complaints() {
   const [evidence, setEvidence] = useState<string[]>([]);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
 
   const states = Object.keys(NIGERIA_LGAS);
   const lgas = residenceState ? NIGERIA_LGAS[residenceState] ?? [] : [];
-
-  // Lazily resolve auth user (used for evidence folder + persistence)
-  const ensureUser = async (): Promise<string | null> => {
-    if (userId) return userId;
-    const { data } = await supabase.auth.getUser();
-    const id = data.user?.id ?? null;
-    setUserId(id);
-    return id;
-  };
 
   const captureLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -76,11 +65,6 @@ export default function Complaints() {
       toast.error("Please describe your complaint in a little more detail.");
       return;
     }
-    const uid = await ensureUser();
-    if (!uid) {
-      toast.error("Please sign in to lodge a complaint.");
-      return;
-    }
     setLoading(true);
     setAnalysis(null);
     setNoMatch(false);
@@ -109,7 +93,7 @@ export default function Complaints() {
       const { data: row, error: insertErr } = await supabase
         .from("complaints")
         .insert({
-          user_id: uid,
+          user_id: null,
           title,
           description: content.trim(),
           category,
