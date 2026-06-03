@@ -385,10 +385,7 @@ export default function Reporting() {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-5 mt-4 border-t border-border/60">
-                  <p className="text-xs text-muted-foreground">
-                    We'll route this report to the right oversight body and tell you how to follow up.
-                  </p>
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-5 mt-4 border-t border-border/60">
                   <Button
                     onClick={submit}
                     disabled={!canSubmit}

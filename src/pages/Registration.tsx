@@ -306,10 +306,7 @@ export default function Registration() {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-5 mt-4 border-t border-border/60">
-                  <p className="text-xs text-muted-foreground">
-                    We'll list the enrolment centre, documents, fees and timelines.
-                  </p>
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-5 mt-4 border-t border-border/60">
                   <Button
                     onClick={submit}
                     disabled={!canSubmit}
