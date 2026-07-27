@@ -1,73 +1,25 @@
-# Welcome to your Lovable project
+THE GATE® — Civic Gateway to Nigerian Government
 
-## Project info
+Overview
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+THE GATE® is a civic technology platform built to close the distance between Nigerian citizens and the tier of government closest to them — their Local Government Area. While national politics dominates headlines, the decisions that shape daily life in Nigeria — roads, markets, primary healthcare, sanitation, basic education, local levies — are made at the LGA level, across 774 Local Government Areas spread over the 36 states and the FCT. Yet for most citizens, their LGA remains a black box: no clear point of contact, no visibility into projects or budgets, and no structured channel to be heard.
 
-## How can I edit this code?
+THE GATE® exists to change that. It serves as a single digital gateway through which citizens can find, understand, and engage their local government — and through which local governments can reach, inform, and answer to the people they serve.
 
-There are several ways of editing your application.
+Why THE GATE®?
 
-**Use Lovable**
+Grassroots governance is where impact lives. The LGA is constitutionally the closest government to the citizen, but it is also the least visible and least accountable tier. THE GATE® makes it findable, legible, and reachable. Transparency builds trust. When citizens can see what their LGA is doing — its leadership, activities, and projects — speculation gives way to informed engagement. Participation should not require connections. Every Nigerian, from Ikeja to Maiduguri, from Nembe to Sokoto North, deserves the same direct line to their local government, without needing to "know somebody." One platform, 774 gateways. A unified, consistent experience across every LGA in the federation, rather than 774 fragmented (or non-existent) channels.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+What THE GATE® Offers
 
-Changes made via Lovable will be committed automatically to this repo.
+🗣️ Citizen Engagement — A structured channel for citizens to engage their LGA: raise concerns, ask questions, and participate in local governance.
 
-**Use your preferred IDE**
+🔍 Transparency & Accountability — Visibility into local governance, promoting openness in how LGAs operate and serve their communities.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+🤝 Two-Way Connection — Not just citizens reaching government, but government reaching citizens: a bridge that carries information in both directions.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🌍 Nationwide Coverage — Designed for all 774 LGAs across Nigeria's 36 states and the Federal Capital Territory. Vision
 
-Follow these steps:
+A Nigeria where every citizen knows their local government, can reach their local government, and can hold their local government to account — and where LGAs, in turn, are empowered to serve visibly, responsively, and transparently. THE GATE® aims to make civic engagement at the grassroots not an occasional act of frustration, but a normal, everyday habit.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Who It's For Citizens & Residents — anyone who wants to engage with or understand their LGA Local Governments — LGAs seeking a modern, credible channel to their constituents Civil Society & Media — organisations tracking grassroots governance and accountability Researchers & Developers — anyone building on structured knowledge of Nigeria's local government landscape
