@@ -1,9 +1,10 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { CIVIC_GUIDE } from "./civic_guide.ts";
+import { formatLegalSources, searchLegalSources } from "./legal-search.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
-const SYSTEM_PROMPT = `You are the Nigerian Civic Actions Assistant. Your SOLE knowledge base and framework is the "Nigerian Citizen's Civic Action Guide" (provided below), which is grounded in the 1999 Constitution of the Federal Republic of Nigeria (as amended). You must never invent agencies, laws, procedures, or contacts that are not in the guide.
+const SYSTEM_PROMPT = `You are the Nigerian Civic Actions Assistant. Your primary civic framework is the "Nigerian Citizen's Civic Action Guide" (provided below), which is grounded in the 1999 Constitution of the Federal Republic of Nigeria (as amended). You may also use the retrieved legal sources supplied with the user's message as supplemental context. You must never invent agencies, laws, procedures, or contacts that are not supported by the Civic Action Guide or the retrieved legal sources.
 
 ========== CIVIC ACTION GUIDE (AUTHORITATIVE) ==========
 ${CIVIC_GUIDE}
@@ -65,8 +66,11 @@ STEP 3 — PRODUCE THE ACTIONABLE REPORT as STRICT JSON with this schema and NO 
 }
 
 RULES YOU MUST ALWAYS FOLLOW
-- Only use information from the Civic Action Guide above as your source.
-- Never invent an agency, law, or procedure not in the guide.
+- Use the Civic Action Guide as the primary framework for civic classification, government tier, responsible authority, and action planning.
+- Use retrieved legal sources only as supplemental legal context; do not treat an unrelated excerpt as applicable.
+- Never invent an agency, law, procedure, deadline, penalty, or contact. If the sources are insufficient, say so and advise appropriate professional or official confirmation.
+- When relying on a retrieved legal source, identify its title and year when practical.
+
 - Always write in plain, simple English any Nigerian citizen can understand. Explain any legal jargon immediately.
 - If the issue is outside the guide, set "out_of_scope": true and in "action_plan" advise consulting a lawyer or the Legal Aid Council of Nigeria — but still give the furthest actionable step possible. Never tell a citizen their issue "cannot be resolved."
 - Be empathetic. Acknowledge frustration, fear, or confusion in "empathy_note" before the action plan.
@@ -85,14 +89,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    let legalContext = "";
+    try {
+      const legalSources = await searchLegalSources(content, { maxResults: 4 });
+      if (legalSources.length > 0) {
+        legalContext = `\n\n========== RETRIEVED LEGAL SOURCES (SUPPLEMENTAL) ==========\n${formatLegalSources(legalSources)}\n========== END RETRIEVED LEGAL SOURCES ==========`;
+      }
+    } catch (error) {
+      // GitHub retrieval is optional. Preserve the existing assistant behavior if it fails.
+      console.warn("Legal source retrieval skipped", error);
+    }
+
+    const enhancedSystemPrompt = `${SYSTEM_PROMPT}${legalContext}`;
+
     const userPrompt = `Hinted action type (citizen's chosen module — verify and override if wrong): ${action ?? "unknown"}
+
 Residence State: ${residenceState ?? "unknown"}
 Residence LGA: ${residenceLga ?? "unknown"}
 
 Citizen message:
 """${content.slice(0, 4000)}"""
 
-Run all three steps (Classify -> Identify Tier -> Produce Actionable Report) using the Civic Action Guide. Substitute the residence State into "Governor of <State>" and the residence LGA into "Chairman of <LGA> Local Government Area" when those tiers apply. Reply with STRICT JSON only, matching the schema in the system prompt.`;
+Run all three steps (Classify -> Identify Tier -> Produce Actionable Report) using the Civic Action Guide and, where relevant, the retrieved legal sources. Substitute the residence State into "Governor of <State>" and the residence LGA into "Chairman of <LGA> Local Government Area" when those tiers apply. Reply with STRICT JSON only, matching the schema in the system prompt.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -103,7 +121,7 @@ Run all three steps (Classify -> Identify Tier -> Produce Actionable Report) usi
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: enhancedSystemPrompt },
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
