@@ -170,9 +170,15 @@ function expandedPhrases(query: string): string[] {
   return [...expanded];
 }
 
+function isConstitutionalSource(row: MetadataRow): boolean {
+  const value = normalize(`${row.title} ${row.original_source_path}`);
+  return value.includes("constitution of the federal republic of nigeria");
+}
+
 function authorityTypesFor(text: string): string[] {
   const value = normalize(text);
   const types = new Set<string>();
+  if (value.includes("constitution")) types.add("constitutional source");
   if (/(police|criminal|offence|prosecution|investigation|assault|rape)/.test(value)) types.add("criminal or police");
   if (/(university|student|school|campus|senate|disciplinary|academic)/.test(value)) types.add("institutional or disciplinary");
   if (/(corruption|bribery|icpc|efcc|economic crime|abuse of office)/.test(value)) types.add("anti-corruption or regulatory");
@@ -252,10 +258,28 @@ export async function searchLegalSources(
   }
 
   const metadata = await metadataPromise;
-  const candidates = metadata
-    .map((row) => metadataScore(row, phrases))
+  const scored = metadata.map((row) => metadataScore(row, phrases));
+
+  // Always provide the model with a constitutional source so it can quote or
+  // accurately paraphrase the relevant constitutional foundation. The source
+  // is supplemental and the prompt still requires the model to use it only
+  // when it is materially relevant to the facts.
+  const constitutionalCandidates = scored
+    .filter(({ row }) => isConstitutionalSource(row))
+    .sort((a, b) => {
+      const aPromulgation = normalize(a.row.title).includes("promulgation") ? 1 : 0;
+      const bPromulgation = normalize(b.row.title).includes("promulgation") ? 1 : 0;
+      return (bPromulgation - aPromulgation) || (b.score - a.score);
+    })
+    .slice(0, 2);
+
+  const topicalCandidates = scored
+    .filter(({ row }) => !isConstitutionalSource(row))
     .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_METADATA_CANDIDATES)
+    .slice(0, MAX_METADATA_CANDIDATES);
+
+  const candidates = [...constitutionalCandidates, ...topicalCandidates]
+    .filter((candidate, index, all) => all.findIndex((item) => item.row.short_id === candidate.row.short_id) === index)
     .slice(0, MAX_FETCHES);
 
   const fetched = await Promise.all(candidates.map(async (candidate) => {
