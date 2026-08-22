@@ -304,7 +304,7 @@ export function ComplaintReportCard({
           Issued by THE GATE®
         </span>
         <span className="font-mono normal-case tracking-normal text-foreground/45 break-all">{refNo}</span>
-        <span>Page 01 / 01</span>
+        <span>THE GATE® Civic Report</span>
       </footer>
     </article>
   );
