@@ -1,16 +1,19 @@
 // GitHub-only legal source retrieval for THE GATE®.
 // This helper does not use Supabase tables and does not modify civic_guide.ts.
 // It reads the public legal-text library from the feature branch and returns
-// only a small number of relevant excerpts for the existing AI prompt.
+// bounded, source-labelled excerpts for the existing AI prompt.
 
 const LEGAL_REPO_OWNER = "Gates774";
 const LEGAL_REPO_NAME = "TheGate774";
-const LEGAL_BRANCH = "feature/legal-law-retrieval";
+const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 
-const MAX_CANDIDATES = 8;
-const MAX_RESULTS = 4;
-const MAX_EXCERPT_CHARS = 6000;
+const MAX_METADATA_CANDIDATES = 32;
+const MAX_FETCHES = 16;
+const MAX_RESULTS = 8;
+const MAX_EXCERPT_CHARS = 7000;
+const MAX_EXCERPT_WINDOWS = 3;
+const WINDOW_CHARS = 2200;
 const REQUEST_TIMEOUT_MS = 7000;
 
 export type LegalSource = {
@@ -19,6 +22,8 @@ export type LegalSource = {
   year: string;
   sourcePath: string;
   textPath: string;
+  authorityTypes: string[];
+  matchStrength: "strong" | "moderate";
   excerpt: string;
 };
 
@@ -30,6 +35,9 @@ type MetadataRow = {
   original_source_path: string;
   text_path: string;
 };
+
+type ScoredRow = { row: MetadataRow; score: number; authorityTypes: string[] };
+type FetchedRow = ScoredRow & { text: string; textScore: number };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
 
@@ -44,6 +52,8 @@ function rawUrl(path: string): string {
 function normalize(value: string): string {
   return value
     .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -121,50 +131,118 @@ async function loadMetadata(): Promise<MetadataRow[]> {
   return parseCsv(csv);
 }
 
-function termsFor(query: string): string[] {
-  return [...new Set(normalize(query)
+const STOP_WORDS = new Set([
+  "the", "and", "for", "from", "with", "that", "this", "have", "has", "into", "about",
+  "what", "when", "where", "which", "should", "could", "would", "does", "under", "their",
+  "there", "they", "them", "your", "you", "are", "was", "were", "been", "being", "who",
+  "how", "can", "may", "also", "case", "issue", "person", "people", "please", "help",
+]);
+
+const TERM_GROUPS: Record<string, string[]> = {
+  molestation: ["molestation", "sexual abuse", "sexual assault", "rape", "indecent assault", "sexual harassment", "safeguarding", "child protection"],
+  abuse: ["abuse", "assault", "violence", "exploitation", "harassment", "victim", "survivor"],
+  student: ["student", "pupil", "undergraduate", "university", "tertiary institution", "campus", "school"],
+  university: ["university", "institution", "senate", "disciplinary committee", "student affairs", "dean", "vice chancellor"],
+  exam: ["exam", "examination", "examination malpractice", "exam malpractice", "academic misconduct", "academic dishonesty", "cheating", "impersonation"],
+  malpractice: ["malpractice", "examination malpractice", "academic misconduct", "fraud", "false pretence", "forgery"],
+  corruption: ["corruption", "bribery", "official corruption", "abuse of office", "economic crime", "financial crime", "icpc", "efcc"],
+  police: ["police", "criminal investigation", "crime", "offence", "prosecution", "investigation"],
+  complaint: ["complaint", "petition", "report", "grievance", "complainant", "redress"],
+  data: ["personal data", "privacy", "data protection", "consent", "confidentiality"],
+  labour: ["employment", "worker", "labour", "workplace", "employer", "employee"],
+  child: ["child", "minor", "children", "juvenile", "young person"],
+  disability: ["disability", "person with disability", "discrimination", "equal opportunity"],
+};
+
+function expandedPhrases(query: string): string[] {
+  const normalized = normalize(query);
+  const terms = normalized
     .split(" ")
-    .filter((term) => term.length >= 3))];
+    .filter((term) => term.length >= 3 && !STOP_WORDS.has(term));
+  const expanded = new Set(terms);
+
+  for (const [trigger, phrases] of Object.entries(TERM_GROUPS)) {
+    if (normalized.includes(trigger) || phrases.some((phrase) => normalized.includes(phrase))) {
+      phrases.forEach((phrase) => expanded.add(normalize(phrase)));
+    }
+  }
+
+  return [...expanded];
 }
 
-function metadataScore(row: MetadataRow, terms: string[]): number {
+function authorityTypesFor(text: string): string[] {
+  const value = normalize(text);
+  const types = new Set<string>();
+  if (/(police|criminal|offence|prosecution|investigation|assault|rape)/.test(value)) types.add("criminal or police");
+  if (/(university|student|school|campus|senate|disciplinary|academic)/.test(value)) types.add("institutional or disciplinary");
+  if (/(corruption|bribery|icpc|efcc|economic crime|abuse of office)/.test(value)) types.add("anti-corruption or regulatory");
+  if (/(child|minor|safeguard|sexual|victim|violence|protection)/.test(value)) types.add("protection or safeguarding");
+  if (/(employment|labour|worker|employer|employee)/.test(value)) types.add("employment or labour");
+  if (/(court|tribunal|appeal|judicial|remedy|redress)/.test(value)) types.add("court, tribunal, or remedy");
+  return [...types];
+}
+
+function includesTerm(value: string, term: string): boolean {
+  if (term.includes(" ")) return value.includes(term);
+  return value.split(" ").includes(term);
+}
+
+function metadataScore(row: MetadataRow, phrases: string[]): ScoredRow {
   const title = normalize(row.title);
   const source = normalize(row.original_source_path);
   const combined = `${title} ${source}`;
   let score = 0;
-  for (const term of terms) {
-    if (title.includes(term)) score += 8;
-    else if (source.includes(term)) score += 5;
-    else if (combined.includes(term)) score += 1;
+
+  for (const phrase of phrases) {
+    if (includesTerm(title, phrase)) score += phrase.includes(" ") ? 18 : 10;
+    else if (includesTerm(source, phrase)) score += phrase.includes(" ") ? 12 : 7;
+    else if (includesTerm(combined, phrase)) score += 2;
   }
-  return score;
+
+  const authorityTypes = authorityTypesFor(`${row.title} ${row.original_source_path}`);
+  if (authorityTypes.length > 0) score += 1;
+  return { row, score, authorityTypes };
 }
 
-function textScore(text: string, terms: string[]): number {
+function escapedTerm(term: string): string {
+  return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function textScore(text: string, phrases: string[]): number {
   const normalized = normalize(text);
-  return terms.reduce((score, term) => {
-    const matches = normalized.match(new RegExp(`\\b${term.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\b`, "g"));
-    return score + Math.min(matches?.length ?? 0, 8);
+  return phrases.reduce((score, phrase) => {
+    const matches = normalized.match(new RegExp(`\\b${escapedTerm(phrase)}\\b`, "g"));
+    return score + Math.min(matches?.length ?? 0, 12) * (phrase.includes(" ") ? 3 : 1);
   }, 0);
 }
 
-function excerptAroundTerms(text: string, terms: string[]): string {
-  const clean = text.replace(/\0/g, "").trim();
+function excerptAroundTerms(text: string, phrases: string[]): string {
+  const clean = text.replace(/\0/g, "").replace(/[ \t]+\n/g, "\n").trim();
   if (clean.length <= MAX_EXCERPT_CHARS) return clean;
 
   const normalized = normalize(clean);
-  const firstTerm = terms.find((term) => normalized.includes(term));
-  const position = firstTerm ? normalized.indexOf(firstTerm) : 0;
-  const start = Math.max(0, Math.min(position - 1200, clean.length - MAX_EXCERPT_CHARS));
-  return clean.slice(start, start + MAX_EXCERPT_CHARS).trim();
+  const positions = phrases
+    .map((phrase) => normalized.indexOf(phrase))
+    .filter((position) => position >= 0)
+    .sort((a, b) => a - b);
+
+  const windows: string[] = [];
+  for (const position of positions.slice(0, MAX_EXCERPT_WINDOWS)) {
+    const start = Math.max(0, Math.min(position - 900, clean.length - WINDOW_CHARS));
+    const window = clean.slice(start, start + WINDOW_CHARS).trim();
+    if (window && !windows.includes(window)) windows.push(window);
+  }
+
+  if (windows.length === 0) return clean.slice(0, MAX_EXCERPT_CHARS).trim();
+  return windows.join("\n\n[... additional relevant passage ...]\n\n").slice(0, MAX_EXCERPT_CHARS).trim();
 }
 
 export async function searchLegalSources(
   query: string,
   options: { maxResults?: number } = {},
 ): Promise<LegalSource[]> {
-  const terms = termsFor(query);
-  if (terms.length === 0) return [];
+  const phrases = expandedPhrases(query);
+  if (phrases.length === 0) return [];
 
   if (!metadataPromise) {
     metadataPromise = loadMetadata().catch((error) => {
@@ -175,41 +253,44 @@ export async function searchLegalSources(
 
   const metadata = await metadataPromise;
   const candidates = metadata
-    .map((row) => ({ row, score: metadataScore(row, terms) }))
+    .map((row) => metadataScore(row, phrases))
     .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_CANDIDATES)
-    .map(({ row }) => row);
+    .slice(0, MAX_METADATA_CANDIDATES)
+    .slice(0, MAX_FETCHES);
 
-  const fetched = await Promise.all(candidates.map(async (row) => {
+  const fetched = await Promise.all(candidates.map(async (candidate) => {
     try {
-      const text = await fetchText(rawUrl(row.text_path));
-      return { row, text, score: textScore(text, terms) };
+      const text = await fetchText(rawUrl(candidate.row.text_path));
+      return { ...candidate, text, textScore: textScore(text, phrases) } as FetchedRow;
     } catch (error) {
-      console.warn("legal source fetch skipped", row.short_id, error);
+      console.warn("legal source fetch skipped", candidate.row.short_id, error);
       return null;
     }
   }));
 
   const limit = Math.min(options.maxResults ?? MAX_RESULTS, MAX_RESULTS);
   return fetched
-    .filter((item): item is { row: MetadataRow; text: string; score: number } => Boolean(item))
-    .sort((a, b) => b.score - a.score)
-    .filter((item) => item.score > 0 || metadataScore(item.row, terms) > 0)
+    .filter((item): item is FetchedRow => Boolean(item))
+    .sort((a, b) => (b.textScore + b.score) - (a.textScore + a.score))
+    .filter((item) => item.textScore > 0 || item.score > 0)
     .slice(0, limit)
-    .map(({ row, text }) => ({
+    .map(({ row, text, textScore: score, authorityTypes }) => ({
       shortId: row.short_id,
       title: row.title,
       year: row.year,
       sourcePath: row.original_source_path,
       textPath: row.text_path,
-      excerpt: excerptAroundTerms(text, terms),
+      authorityTypes: authorityTypes.length > 0 ? authorityTypes : ["statutory source"],
+      matchStrength: score >= 6 ? "strong" : "moderate",
+      excerpt: excerptAroundTerms(text, phrases),
     }));
 }
 
 export function formatLegalSources(sources: LegalSource[]): string {
   if (sources.length === 0) return "";
   return sources.map((source, index) => [
-    `[Legal source ${index + 1}] ${source.title}${source.year ? ` (${source.year})` : ""}`,
+    `[Legal source ${index + 1} — ${source.matchStrength} match] ${source.title}${source.year ? ` (${source.year})` : ""}`,
+    `Authority area(s): ${source.authorityTypes.join("; ")}`,
     `Source file: ${source.sourcePath}`,
     `GitHub text path: ${source.textPath}`,
     source.excerpt,
