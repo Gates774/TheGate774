@@ -198,14 +198,14 @@ export function ComplaintReportCard({
           <p className="text-[14px] sm:text-[15px] leading-[1.7] sm:leading-[1.75] text-foreground/90 break-words">{analysis.issue_summary ?? analysis.rationale ?? "—"}</p>
         </Section>
 
-        {hasLegalSourcePassage && (
+        {hasLegalAnalysis && (
           <Section label="02 — Retrieved legal provisions" icon={ScrollText}>
             <div className="space-y-4 print-break-inside-avoid">
               <div className="whitespace-pre-wrap font-mono text-[12px] sm:text-[13px] leading-[1.65] text-foreground/90 border-l-2 border-foreground/25 pl-3 sm:pl-4 overflow-x-auto">
                 {analysis.rationale}
               </div>
               <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/50">
-                The law passage above was retrieved for this complaint. Confirm the official text and obtain professional advice before taking legal action.
+                The passage above was retrieved for this civic action. Confirm the official text and obtain professional advice before taking legal action.
               </p>
             </div>
           </Section>
