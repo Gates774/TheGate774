@@ -275,27 +275,59 @@
     size: A4;
     margin: 0.6in 0.55in;
   }
+
+  html, body, #root, main, div, article, section {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
+
   .print-root,
   .print-root * {
     visibility: visible !important;
   }
+
   .print-root {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
     box-shadow: none !important;
     border: 0 !important;
     background: white !important;
     color: black !important;
   }
+
   .no-print {
     display: none !important;
   }
+
+  /* Allow normal page breaks across the report body */
   .print-break-inside-avoid {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* Long legal passages, lists, and body sections must flow onto the next page */
+  .print-root article,
+  .print-root .whitespace-pre-wrap,
+  .print-root ol,
+  .print-root ul,
+  .print-root p {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Preserve whitespace for legal provisions */
+  .print-root .whitespace-pre-wrap {
+    white-space: pre-wrap !important;
   }
 }
