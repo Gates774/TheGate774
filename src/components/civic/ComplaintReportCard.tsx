@@ -74,6 +74,11 @@ export function ComplaintReportCard({
   const steps = analysis.action_plan?.length ? analysis.action_plan : analysis.next_steps ?? [];
   const authority = analysis.responsible_authority?.name ?? analysis.mda ?? "Responsible authority";
   const officer = analysis.responsible_authority?.officer ?? analysis.officer ?? "—";
+  const hasLegalAnalysis = Boolean(analysis.rationale?.trim());
+  const actionSectionNo = hasLegalAnalysis ? "04" : "03";
+  const documentsSectionNo = hasLegalAnalysis ? "05" : "04";
+  const escalationSectionNo = hasLegalAnalysis ? "06" : "05";
+  const sourcesSectionNo = hasLegalAnalysis ? "07" : "06";
   const refNo = makeRef(tier);
   const issued = formatToday();
 
@@ -200,8 +205,19 @@ export function ComplaintReportCard({
           </dl>
         </Section>
 
+        {analysis.rationale && analysis.rationale.trim() && (
+          <Section label="03 — Legal foundations and analysis" icon={ScrollText}>
+            <div className="space-y-3 text-[14px] sm:text-[15px] leading-[1.7] text-foreground/90 break-words print-break-inside-avoid">
+              <p>{analysis.rationale}</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-foreground/50">
+                Legal basis is shown from the available retrieved sources; verify the official text where indicated.
+              </p>
+            </div>
+          </Section>
+        )}
+
         {steps.length > 0 && (
-          <Section label="03 — Recommended course of action" icon={CheckCircle2}>
+          <Section label={`${actionSectionNo} — Recommended course of action`} icon={CheckCircle2}>
             <ol className="space-y-3 sm:space-y-4">
               {steps.map((s, i) => (
                 <li key={i} className="flex gap-3 sm:gap-4 text-[14px] sm:text-[15px] leading-[1.7] print-break-inside-avoid">
@@ -216,7 +232,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.documents_needed && analysis.documents_needed.length > 0 && (
-          <Section label="04 — Documents to prepare" icon={FileCheck2}>
+          <Section label={`${documentsSectionNo} — Documents to prepare`} icon={FileCheck2}>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               {analysis.documents_needed.map((d) => (
                 <li key={d} className="flex items-start gap-3 text-[14px] leading-relaxed py-1 border-b border-dashed border-foreground/10">
@@ -229,7 +245,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.escalation_path && analysis.escalation_path.length > 0 && (
-          <Section label="05 — Escalation pathway" icon={ArrowUpRight}>
+          <Section label={`${escalationSectionNo} — Escalation pathway`} icon={ArrowUpRight}>
             <ol className="space-y-2 border-l border-foreground/15 pl-4 sm:pl-5">
               {analysis.escalation_path.map((e, i) => (
                 <li key={i} className="relative text-[13.5px] sm:text-[14px] leading-relaxed text-foreground/85 break-words">
@@ -253,7 +269,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.sources && analysis.sources.length > 0 && (
-          <Section label="06 — Source authorities" icon={Link2}>
+          <Section label={`${sourcesSectionNo} — Source authorities`} icon={Link2}>
             <ul className="space-y-1.5">
               {analysis.sources.map((s, i) => (
                 <li key={i} className="text-[13px] flex items-start gap-3 text-foreground/75">
