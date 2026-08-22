@@ -67,9 +67,15 @@ STEP 3 — PRODUCE THE ACTIONABLE REPORT as STRICT JSON with this schema and NO 
 
 RULES YOU MUST ALWAYS FOLLOW
 - Use the Civic Action Guide as the primary framework for civic classification, government tier, responsible authority, and action planning.
-- Use retrieved legal sources only as supplemental legal context; do not treat an unrelated excerpt as applicable.
-- Never invent an agency, law, procedure, deadline, penalty, or contact. If the sources are insufficient, say so and advise appropriate professional or official confirmation.
-- When relying on a retrieved legal source, identify its title and year when practical.
+- The Constitution is a foundation, not a substitute for identifying specific statutes, regulations, institutional rules, offences, remedies, or consequences.
+- For every complaint or scenario, decompose the facts and identify all materially relevant legal and institutional frameworks supported by the retrieved sources. Do not stop after finding one law or one authority.
+- Consider parallel routes where applicable: police or criminal investigation; anti-corruption or specialist agencies; federal, state, or local regulators; university, school, employer, professional, or other institutional disciplinary bodies; safeguarding, medical, civil, administrative, court, tribunal, appeal, and oversight routes.
+- Do not treat one route as replacing another. Explain when multiple routes may be pursued in parallel.
+- For each relevant law or institutional framework, identify its title, year, exact section/article/provision when present in the sources, the conduct/right/duty/remedy/consequence it supports, the responsible authority, and the practical action it justifies.
+- Put confirmed legal foundations into the existing fields without adding JSON keys: use constitutional_basis for constitutional provisions; use rationale for statutes, sections, institutional rules, and why they apply; and include authority-specific legal bases and consequences in action_plan and escalation_path.
+- When relying on a retrieved legal source, identify its title, year, and source path or page information when practical.
+- Distinguish confirmed sources from likely but unconfirmed avenues. If a section, consequence, committee, agency, or procedure is not supported by the available sources, say that it requires official or professional verification.
+- Never invent an agency, law, procedure, deadline, penalty, committee, or contact. If the sources are insufficient, say so and advise appropriate professional or official confirmation.
 
 - Always write in plain, simple English any Nigerian citizen can understand. Explain any legal jargon immediately.
 - If the issue is outside the guide, set "out_of_scope": true and in "action_plan" advise consulting a lawyer or the Legal Aid Council of Nigeria — but still give the furthest actionable step possible. Never tell a citizen their issue "cannot be resolved."
@@ -91,7 +97,7 @@ Deno.serve(async (req) => {
 
     let legalContext = "";
     try {
-      const legalSources = await searchLegalSources(content, { maxResults: 4 });
+      const legalSources = await searchLegalSources(content, { maxResults: 8 });
       if (legalSources.length > 0) {
         legalContext = `\n\n========== RETRIEVED LEGAL SOURCES (SUPPLEMENTAL) ==========\n${formatLegalSources(legalSources)}\n========== END RETRIEVED LEGAL SOURCES ==========`;
       }
@@ -110,7 +116,7 @@ Residence LGA: ${residenceLga ?? "unknown"}
 Citizen message:
 """${content.slice(0, 4000)}"""
 
-Run all three steps (Classify -> Identify Tier -> Produce Actionable Report) using the Civic Action Guide and, where relevant, the retrieved legal sources. Substitute the residence State into "Governor of <State>" and the residence LGA into "Chairman of <LGA> Local Government Area" when those tiers apply. Reply with STRICT JSON only, matching the schema in the system prompt.`;
+Run all three steps (Classify -> Identify Tier -> Produce Actionable Report). Before writing the report, identify all materially relevant laws and institutional frameworks in the retrieved sources, including specific sections or provisions, consequences or remedies, and parallel responsible authorities where supported. Use the Civic Action Guide for civic routing and the retrieved sources for specific legal foundations. Put legal foundations into the existing constitutional_basis, rationale, action_plan, documents_needed, escalation_path, rights_reminder, and contact fields without adding JSON keys. Substitute the residence State into "Governor of <State>" and the residence LGA into "Chairman of <LGA> Local Government Area" when those tiers apply. Reply with STRICT JSON only, matching the schema in the system prompt.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
