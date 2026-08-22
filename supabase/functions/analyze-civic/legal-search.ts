@@ -41,8 +41,20 @@ type FetchedRow = ScoredRow & { text: string; textScore: number };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
 
+function libraryPath(path: string): string {
+  const cleanPath = path.replace(/^\/+/, "");
+
+  // metadata_github.csv stores text_path as laws_text/... while the uploaded
+  // GitHub library is stored under laws/text/.... Normalize both forms here.
+  if (cleanPath === "laws_text" || cleanPath.startsWith("laws_text/")) {
+    return `laws/text/${cleanPath.slice("laws_text".length).replace(/^\/+/, "")}`;
+  }
+  if (cleanPath.startsWith("laws/")) return cleanPath;
+  return `laws/${cleanPath}`;
+}
+
 function rawUrl(path: string): string {
-  const safePath = path
+  const safePath = libraryPath(path)
     .split("/")
     .map((part) => encodeURIComponent(part))
     .join("/");
