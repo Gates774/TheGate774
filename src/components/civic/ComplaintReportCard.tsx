@@ -200,7 +200,7 @@ export function ComplaintReportCard({
 
         {hasLegalAnalysis && (
           <Section label="02 — Retrieved legal provisions" icon={ScrollText}>
-            <div className="space-y-4 print-break-inside-avoid">
+            <div className="space-y-4">
               <div className="whitespace-pre-wrap font-mono text-[12px] sm:text-[13px] leading-[1.65] text-foreground/90 border-l-2 border-foreground/25 pl-3 sm:pl-4 overflow-x-auto">
                 {analysis.rationale}
               </div>
