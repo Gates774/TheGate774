@@ -24,6 +24,7 @@ export type LegalSource = {
   textPath: string;
   authorityTypes: string[];
   matchStrength: "strong" | "moderate";
+  provisions: string[];
   excerpt: string;
 };
 
@@ -37,6 +38,8 @@ type MetadataRow = {
 };
 
 type ScoredRow = { row: MetadataRow; score: number; authorityTypes: string[] };
+type SectionBlock = { label: string; text: string; start: number; end: number };
+type SectionExcerpt = { excerpt: string; score: number; provisions: string[] };
 type FetchedRow = ScoredRow & { text: string; textScore: number };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
@@ -44,10 +47,10 @@ let metadataPromise: Promise<MetadataRow[]> | undefined;
 function libraryPath(path: string): string {
   const cleanPath = path.replace(/^\/+/, "");
 
-  // metadata_github.csv stores text_path as laws/text/... while the uploaded
-  // GitHub library is stored under laws/text/.... Normalize both forms here.
-  if (cleanPath === "laws/text" || cleanPath.startsWith("laws/text/")) {
-    return `laws/text/${cleanPath.slice("laws/text".length).replace(/^\/+/, "")}`;
+  // metadata_github.csv stores text_path as laws_text/... while the uploaded
+  // GitHub library is stored under laws/text/.... Normalize that mismatch.
+  if (cleanPath === "laws_text" || cleanPath.startsWith("laws_text/")) {
+    return `laws/text/${cleanPath.slice("laws_text".length).replace(/^\/+/, "")}`;
   }
   if (cleanPath.startsWith("laws/")) return cleanPath;
   return `laws/${cleanPath}`;
@@ -156,7 +159,9 @@ const TERM_GROUPS: Record<string, string[]> = {
   student: ["student", "pupil", "undergraduate", "university", "tertiary institution", "campus", "school"],
   university: ["university", "institution", "senate", "disciplinary committee", "student affairs", "dean", "vice chancellor"],
   exam: ["exam", "examination", "examination malpractice", "exam malpractice", "academic misconduct", "academic dishonesty", "cheating", "impersonation"],
-  malpractice: ["malpractice", "examination malpractice", "academic misconduct", "fraud", "false pretence", "forgery"],
+    malpractice: ["malpractice", "examination malpractice", "academic misconduct", "fraud", "false pretence", "forgery"],
+  marriage: ["wife", "husband", "spouse", "married", "marriage", "family", "property"],
+  theft: ["theft", "stealing", "stole", "stolen", "dishonestly", "property", "money", "convert"],
   corruption: ["corruption", "bribery", "official corruption", "abuse of office", "economic crime", "financial crime", "icpc", "efcc"],
   police: ["police", "criminal investigation", "crime", "offence", "prosecution", "investigation"],
   complaint: ["complaint", "petition", "report", "grievance", "complainant", "redress"],
@@ -165,6 +170,23 @@ const TERM_GROUPS: Record<string, string[]> = {
   child: ["child", "minor", "children", "juvenile", "young person"],
   disability: ["disability", "person with disability", "discrimination", "equal opportunity"],
 };
+
+function extractSections(text: string): SectionBlock[] {
+  const sections: SectionBlock[] = [];
+  const marker = /(?:^|\n)[ \t]*(?:(?:section|sec\.?)[ \t]+)?(\d+[A-Za-z]?(?:\s*\([^)]+\))?)[ \t]*\.[ \t]*/gi;
+  const matches = [...text.matchAll(marker)];
+
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const start = match.index ?? 0;
+    const end = matches[index + 1]?.index ?? text.length;
+    const number = match[1].replace(/\s+/g, "");
+    const block = text.slice(start, end).trim();
+    if (block.length >= 20) sections.push({ label: `Section ${number}`, text: block, start, end });
+  }
+
+  return sections;
+}
 
 function expandedPhrases(query: string): string[] {
   const normalized = normalize(query);
@@ -255,6 +277,35 @@ function excerptAroundTerms(text: string, phrases: string[]): string {
   return windows.join("\n\n[... additional relevant passage ...]\n\n").slice(0, MAX_EXCERPT_CHARS).trim();
 }
 
+function sectionAwareExcerpt(text: string, phrases: string[]): SectionExcerpt {
+  const clean = text.replace(/\0/g, "").replace(/[ \t]+\n/g, "\n").trim();
+  const sections = extractSections(clean);
+  if (sections.length === 0) {
+    return { excerpt: excerptAroundTerms(clean, phrases), score: textScore(clean, phrases), provisions: [] };
+  }
+
+  const ranked = sections
+    .map((section) => ({
+      section,
+      score: textScore(section.text, phrases),
+    }))
+    .sort((a, b) => b.score - a.score || a.section.start - b.section.start);
+
+  const selected = ranked.filter((item) => item.score > 0).slice(0, 4);
+  const fallback = selected.length > 0 ? selected : ranked.slice(0, 2);
+  const excerpt = fallback
+    .map(({ section }) => `[${section.label}]\n${section.text}`)
+    .join("\n\n---\n\n")
+    .slice(0, MAX_EXCERPT_CHARS)
+    .trim();
+
+  return {
+    excerpt,
+    score: fallback.reduce((total, item) => total + item.score, 0),
+    provisions: fallback.map(({ section }) => section.label),
+  };
+}
+
 export async function searchLegalSources(
   query: string,
   options: { maxResults?: number } = {},
@@ -297,7 +348,14 @@ export async function searchLegalSources(
   const fetched = await Promise.all(candidates.map(async (candidate) => {
     try {
       const text = await fetchText(rawUrl(candidate.row.text_path));
-      return { ...candidate, text, textScore: textScore(text, phrases) } as FetchedRow;
+      const sectionExcerpt = sectionAwareExcerpt(text, phrases);
+      return {
+        ...candidate,
+        text,
+        textScore: sectionExcerpt.score,
+        sectionExcerpt: sectionExcerpt.excerpt,
+        provisions: sectionExcerpt.provisions,
+      } as FetchedRow & { sectionExcerpt: string; provisions: string[] };
     } catch (error) {
       console.warn("legal source fetch skipped", candidate.row.short_id, error);
       return null;
@@ -306,11 +364,11 @@ export async function searchLegalSources(
 
   const limit = Math.min(options.maxResults ?? MAX_RESULTS, MAX_RESULTS);
   return fetched
-    .filter((item): item is FetchedRow => Boolean(item))
+    .filter((item): item is FetchedRow & { sectionExcerpt: string; provisions: string[] } => Boolean(item))
     .sort((a, b) => (b.textScore + b.score) - (a.textScore + a.score))
     .filter((item) => item.textScore > 0 || item.score > 0)
     .slice(0, limit)
-    .map(({ row, text, textScore: score, authorityTypes }) => ({
+    .map(({ row, text, textScore: score, authorityTypes, sectionExcerpt, provisions }) => ({
       shortId: row.short_id,
       title: row.title,
       year: row.year,
@@ -318,7 +376,8 @@ export async function searchLegalSources(
       textPath: row.text_path,
       authorityTypes: authorityTypes.length > 0 ? authorityTypes : ["statutory source"],
       matchStrength: score >= 6 ? "strong" : "moderate",
-      excerpt: excerptAroundTerms(text, phrases),
+      provisions,
+      excerpt: sectionExcerpt || excerptAroundTerms(text, phrases),
     }));
 }
 
@@ -327,6 +386,7 @@ export function formatLegalSources(sources: LegalSource[]): string {
   return sources.map((source, index) => [
     `[Legal source ${index + 1} — ${source.matchStrength} match] ${source.title}${source.year ? ` (${source.year})` : ""}`,
     `Authority area(s): ${source.authorityTypes.join("; ")}`,
+    `Provision(s) returned: ${source.provisions.length > 0 ? source.provisions.join(", ") : "section marker not detected"}`,
     `Source file: ${source.sourcePath}`,
     `GitHub text path: ${source.textPath}`,
     source.excerpt,
