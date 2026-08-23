@@ -553,9 +553,6 @@ export function formatLegalSources(sources: LegalSource[]): string {
 }
 
 
-Landmark,
-
-
 const logo = gate774Logo.url;
 
 const TIER_META = {
