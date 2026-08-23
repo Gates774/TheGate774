@@ -1,10 +1,45 @@
 import {
+  Landmark,
+  Building2,
+  MapPin,
+  ScrollText,
+  CheckCircle2,
+  FileCheck2,
+  ArrowUpRight,
+  Shield,
+  AlertCircle,
+  Link2,
+  HelpCircle,
+  Printer,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import gate774Logo from "@/assets/gate774-logo.png.asset.json";
+
 
 export interface ComplaintAnalysis {
   tier?: "federal" | "state" | "local";
   level?: string;
   issue_summary?: string;
-  responsible_authority?: { name?: string; tier?: string; officer?: string }
+  responsible_authority?: { name?: string; tier?: string; officer?: string };
+  mda?: string;
+  officer?: string;
+  constitutional_basis?: string;
+  action_plan?: string[];
+  next_steps?: string[];
+  documents_needed?: string[];
+  escalation_path?: string[];
+  rights_reminder?: string;
+  rationale?: string;
+  empathy_note?: string;
+  out_of_scope?: boolean;
+  confidence?: "high" | "medium" | "low";
+  /** Official authorities / publications cited as the source for this answer. */
+  sources?: Array<{ name: string; url?: string }>;
+  /** Suggested follow-up questions the user might want to ask next. */
+  follow_ups?: string[];
+}
+
 
 // GitHub-only legal source retrieval for THE GATE®.
 // This helper does not use Supabase tables and does not modify civic_guide.ts.
@@ -519,41 +554,9 @@ export function formatLegalSources(sources: LegalSource[]): string {
 
 
 Landmark,
-  Building2,
-  MapPin,
-  ScrollText,
-  CheckCircle2,
-  FileCheck2,
-  ArrowUpRight,
-  Shield,
-  AlertCircle,
-  Link2,
-  HelpCircle,
-  Printer,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import gate774Logo from "@/assets/gate774-logo.png.asset.json";
-const logo = gate774Logo.url;
 
-;
-  mda?: string;
-  officer?: string;
-  constitutional_basis?: string;
-  action_plan?: string[];
-  next_steps?: string[];
-  documents_needed?: string[];
-  escalation_path?: string[];
-  rights_reminder?: string;
-  rationale?: string;
-  empathy_note?: string;
-  out_of_scope?: boolean;
-  confidence?: "high" | "medium" | "low";
-  /** Official authorities / publications cited as the source for this answer. */
-  sources?: Array<{ name: string; url?: string }>;
-  /** Suggested follow-up questions the user might want to ask next. */
-  follow_ups?: string[];
-}
+
+const logo = gate774Logo.url;
 
 const TIER_META = {
   federal: { label: "Federal Republic of Nigeria", short: "Federal", icon: Landmark },
@@ -860,3 +863,4 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
     </div>
   );
 }
+
