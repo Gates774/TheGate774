@@ -7,6 +7,9 @@ const LEGAL_REPO_OWNER = "Gates774";
 const LEGAL_REPO_NAME = "TheGate774";
 const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
+const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
+const MAX_MDA_RESULTS = 6;
+const MAX_MDA_CONTEXT_CHARS = 12000;
 
 const MAX_METADATA_CANDIDATES = 32;
 const MAX_FETCHES = 16;
@@ -28,6 +31,16 @@ export type LegalSource = {
   excerpt: string;
 };
 
+export type MdaSource = {
+  institution: string;
+  website: string;
+  addressContact: string;
+  category: string;
+  sourcePath: string;
+  matchStrength: "strong" | "moderate";
+  excerpt: string;
+};
+
 type MetadataRow = {
   short_id: string;
   batch: string;
@@ -43,6 +56,7 @@ type SectionExcerpt = { excerpt: string; score: number; provisions: string[] };
 type FetchedRow = ScoredRow & { text: string; textScore: number };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
+let mdaDirectoryPromise: Promise<string> | undefined;
 
 function libraryPath(path: string): string {
   const cleanPath = path.replace(/^\/+/, "");
@@ -146,12 +160,32 @@ async function loadMetadata(): Promise<MetadataRow[]> {
   return parseCsv(csv);
 }
 
+async function loadMdaDirectory(): Promise<string> {
+  if (!mdaDirectoryPromise) {
+    mdaDirectoryPromise = fetchText(rawUrl(MDA_DIRECTORY_PATH)).catch((error) => {
+      mdaDirectoryPromise = undefined;
+      throw error;
+    });
+  }
+  return mdaDirectoryPromise;
+}
+
 const STOP_WORDS = new Set([
   "the", "and", "for", "from", "with", "that", "this", "have", "has", "into", "about",
   "what", "when", "where", "which", "should", "could", "would", "does", "under", "their",
   "there", "they", "them", "your", "you", "are", "was", "were", "been", "being", "who",
   "how", "can", "may", "also", "case", "issue", "person", "people", "please", "help",
 ]);
+
+const MDA_TERM_GROUPS: Record<string, string[]> = {
+  oil: ["oil", "petroleum", "pipeline", "oilfield", "oil mining", "licence", "license", "permit", "upstream", "midstream", "downstream", "spill", "pollution", "gas", "refinery", "local content"],
+  education: ["education", "student", "school", "university", "examination", "exam", "academic", "tertiary"],
+  health: ["health", "hospital", "medical", "drug", "medicine", "patient"],
+  crime: ["police", "crime", "fraud", "corruption", "investigation", "victim"],
+  environment: ["environment", "pollution", "spill", "waste", "flood", "water"],
+  labour: ["labour", "employment", "worker", "employer", "workplace"],
+  complaint: ["complaint", "petition", "report", "redress", "ombudsman"],
+};
 
 const TERM_GROUPS: Record<string, string[]> = {
   molestation: ["molestation", "sexual abuse", "sexual assault", "rape", "indecent assault", "sexual harassment", "safeguarding", "child protection"],
@@ -170,6 +204,105 @@ const TERM_GROUPS: Record<string, string[]> = {
   child: ["child", "minor", "children", "juvenile", "young person"],
   disability: ["disability", "person with disability", "discrimination", "equal opportunity"],
 };
+
+function expandedMdaPhrases(query: string): string[] {
+  const value = normalize(query);
+  const terms = new Set(value.split(" ").filter((term) => term.length >= 3));
+  for (const phrases of Object.values(MDA_TERM_GROUPS)) {
+    if (phrases.some((phrase) => value.includes(phrase))) {
+      phrases.forEach((phrase) => terms.add(phrase));
+    }
+  }
+  return [...terms];
+}
+
+function parseMdaRows(directory: string): Array<{ institution: string; website: string; addressContact: string; category: string; lineIndex: number }> {
+  const lines = directory.replace(/\r/g, "").split("\n");
+  const rows: Array<{ institution: string; website: string; addressContact: string; category: string; lineIndex: number }> = [];
+  let category = "";
+  const rowPattern = /^\s*(.*?)\s{2,}((?:https?:\/\/)?[A-Za-z0-9.-]+\.(?:gov\.ng|org|com|net|ng)|—)\s{2,}(.*?)\s*$/;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index].trimEnd();
+    const heading = line.match(/^\s*(\d{1,2})\.\s+(.+)$/);
+    if (heading && !/^\d+\.$/.test(heading[2].trim())) category = heading[2].trim();
+    const match = line.match(rowPattern);
+    if (!match) continue;
+    let institution = match[1].replace(/\s+/g, " ").trim();
+    const website = match[2].trim();
+    const addressContact = match[3].replace(/\s+/g, " ").trim();
+
+    // The PDF conversion wraps long institution names onto the next line.
+    // Join those continuation lines so the report receives the complete name.
+    let continuationIndex = index + 1;
+    while (continuationIndex < lines.length) {
+      const continuation = lines[continuationIndex].trim();
+      if (!continuation || /^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact)/i.test(continuation)) break;
+      if (/^\d{1,2}\.\s+/.test(continuation) || rowPattern.test(lines[continuationIndex])) break;
+      if (/^(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))(?:\s+(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))){0,8}$/.test(continuation)) {
+        institution = `${institution} ${continuation}`.replace(/\s+/g, " ").trim();
+        continuationIndex += 1;
+        continue;
+      }
+      break;
+    }
+
+    if (!institution || institution.toLowerCase() === "institution") continue;
+    rows.push({ institution, website, addressContact, category, lineIndex: index });
+  }
+
+  return rows;
+}
+
+function mdaRowScore(row: { institution: string; website: string; addressContact: string; category: string }, phrases: string[]): number {
+  const value = normalize(`${row.institution} ${row.website} ${row.addressContact} ${row.category}`);
+  let score = 0;
+  for (const phrase of phrases) {
+    if (value.includes(phrase)) score += phrase.includes(" ") ? 4 : 1;
+  }
+  return score;
+}
+
+export async function searchMdaDirectory(
+  query: string,
+  options: { maxResults?: number } = {},
+): Promise<MdaSource[]> {
+  const phrases = expandedMdaPhrases(query);
+  if (phrases.length === 0) return [];
+  const directory = await loadMdaDirectory();
+  const lines = directory.replace(/\r/g, "").split("\n");
+  const rows = parseMdaRows(directory);
+  const matches = rows
+    .map((row) => ({ row, score: mdaRowScore(row, phrases) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, options.maxResults ?? MAX_MDA_RESULTS);
+
+  return matches.map(({ row, score }) => {
+    const excerpt = lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 4)).join("\n").trim();
+    return {
+      institution: row.institution,
+      website: row.website,
+      addressContact: row.addressContact,
+      category: row.category,
+      sourcePath: MDA_DIRECTORY_PATH,
+      matchStrength: score >= 5 ? "strong" : "moderate",
+      excerpt: excerpt.slice(0, 2400),
+    };
+  });
+}
+
+export function formatMdaSources(sources: MdaSource[]): string {
+  if (sources.length === 0) return "";
+  return sources.map((source, index) => [
+    `[MDA source ${index + 1} — ${source.matchStrength} match] ${source.institution}`,
+    `Category: ${source.category || "Not specified in directory"}`,
+    `Website: ${source.website === "—" ? "Not listed" : source.website}`,
+    `Address / Contact: ${source.addressContact || "Not listed"}`,
+    `Directory source: ${source.sourcePath}`,
+    `Directory passage: ${source.excerpt}`,
+  ].join("\n")).join("\n\n---\n\n");
+}
 
 function extractSections(text: string): SectionBlock[] {
   const sections: SectionBlock[] = [];
