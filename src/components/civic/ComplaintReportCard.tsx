@@ -587,15 +587,34 @@ function extractMdaField(value: string | undefined, labels: string[]): string | 
   return match?.[1]?.trim() || undefined;
 }
 
+function isWebsite(value: string | undefined): boolean {
+  return Boolean(value && /^(?:https?:\/\/)?(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s]*)?$/i.test(value.trim()));
+}
+
 function extractMdaAddressContact(analysis: ComplaintAnalysis): string | undefined {
   const labelled = extractMdaField(analysis.mda, ["Address / Contact", "Address", "Contact"])
-    ?? extractMdaField(analysis.contact, ["Address / Contact", "Address", "Contact"])
-    ?? extractMdaField(analysis.rationale, ["Address / Contact", "Address", "Contact"]);
+    ?? extractMdaField(analysis.contact, ["Address / Contact", "Address", "Contact"]);
   if (labelled) return labelled;
 
-  const combined = [analysis.mda, analysis.contact, analysis.rationale].filter(Boolean).join("\n");
-  const addressLine = combined.match(/(?:HQ|Headquarters|Office|Plot|Block|House|Street|Road|Avenue|Crescent|Complex|Secretariat|PMB|Abuja|Lagos)[^\n;]{5,}/i);
-  return addressLine?.[0]?.trim() || undefined;
+  // Parse only the MDA/contact values. Never infer an address from legal rationale text.
+  const block = [analysis.mda, analysis.contact].filter(Boolean).join("\n");
+  const lines = block.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const websitePattern = /(?:https?:\/\/)?(?:www\.)?[A-Za-z0-9.-]+\.(?:gov\.ng|org|com|net|ng)\b/i;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(websitePattern);
+    if (!match) continue;
+    const sameLine = lines[index].slice((match.index ?? 0) + match[0].length)
+      .replace(/^\s*\[V\]\s*/i, "")
+      .replace(/^\s*[|—-]\s*/, "")
+      .trim();
+    if (sameLine.length >= 6 && !/^directory source/i.test(sameLine)) return sameLine;
+
+    const nextLine = lines[index + 1];
+    if (nextLine && !/^directory source|^website|^institution/i.test(nextLine)) return nextLine;
+  }
+
+  return undefined;
 }
 
 export function ComplaintReportCard({
@@ -739,7 +758,7 @@ export function ComplaintReportCard({
             <div className="space-y-4">
               {(analysis.mda || analysis.contact) && (() => {
                 const institution = extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
-                const website = extractMdaField(analysis.mda, ["Website"]) ?? analysis.contact;
+                const website = extractMdaField(analysis.mda, ["Website"]) ?? (isWebsite(analysis.contact) ? analysis.contact : undefined);
                 const address = extractMdaAddressContact(analysis);
                 return (
                   <dl className="space-y-3">
