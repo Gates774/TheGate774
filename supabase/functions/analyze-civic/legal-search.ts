@@ -8,7 +8,6 @@ const LEGAL_REPO_NAME = "TheGate774";
 const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 const MDA_CSV_PATH = "laws/mda/nigeria-mda-directory.csv";
-const MDA_SOURCE_LABEL = "Nigerian MDA directory";
 const MAX_MDA_RESULTS = 1;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
@@ -21,6 +20,17 @@ const WINDOW_CHARS = 2200;
 const REQUEST_TIMEOUT_MS = 12000;
 const MAX_FETCH_RETRIES = 2; // total attempts = 1 + MAX_FETCH_RETRIES
 const RETRY_BACKOFF_MS = 400;
+
+// Resource-limit guards. A full statute's raw text can be very large, and
+// the section-splitting regex below can spuriously match on numbered
+// sub-clauses, list markers, and PDF-conversion artifacts (not just real
+// "Section N." headings). Without these caps, a single large or messy
+// source document can produce thousands of "sections", each of which used
+// to be scored against every search phrase with a freshly-compiled RegExp —
+// an O(sections * phrases) blow-up that was exhausting the edge function's
+// CPU/memory budget (WORKER_RESOURCE_LIMIT).
+const MAX_SOURCE_TEXT_CHARS = 50000;
+const MAX_SECTION_MATCHES = 600;
 
 export type LegalSource = {
   shortId: string;
@@ -62,6 +72,8 @@ type ScoredRow = { row: MetadataRow; score: number; authorityTypes: string[] };
 type SectionBlock = { label: string; text: string; start: number; end: number };
 type SectionExcerpt = { excerpt: string; score: number; provisions: string[] };
 type FetchedRow = ScoredRow & { text: string; textScore: number };
+/** A phrase paired with its precompiled word-boundary regex, built once per search rather than once per section. */
+type CompiledPhrase = { phrase: string; regex: RegExp };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
 let mdaCsvPromise: Promise<string> | undefined;
@@ -206,7 +218,7 @@ function parseMdaCsv(csv: string): MdaSource[] {
       mandate: profile.mandate,
       aliases: profile.aliases,
       issueTerms: profile.issueTerms,
-      jurisdiction: /state/i.test(row.category ?? "") ? "state" : "federal",
+      jurisdiction: (/state/i.test(row.category ?? "") ? "state" : "federal") as MdaSource["jurisdiction"],
       sourcePath: row.source_file?.trim() || MDA_CSV_PATH,
       source_file: row.source_file?.trim() || MDA_CSV_PATH,
       matchStrength: "moderate" as const,
@@ -383,15 +395,6 @@ function authorityScore(source: MdaSource, query: string): number {
   return score;
 }
 
-function mdaRowScore(row: { institution: string; website: string; addressContact: string; category: string }, phrases: string[]): number {
-  const value = normalize(`${row.institution} ${row.website} ${row.addressContact} ${row.category}`);
-  let score = 0;
-  for (const phrase of phrases) {
-    if (value.includes(phrase)) score += phrase.includes(" ") ? 4 : 1;
-  }
-  return score;
-}
-
 export async function searchMdaDirectory(
   query: string,
   options: { maxResults?: number } = {},
@@ -442,10 +445,18 @@ function extractSections(text: string): SectionBlock[] {
   const marker = /(?:^|\n)[ \t]*(?:(?:section|sec\.?)[ \t]+)?(\d+[A-Za-z]?(?:\s*\([^)]+\))?)[ \t]*\.[ \t]*/gi;
   const matches = [...text.matchAll(marker)];
 
-  for (let index = 0; index < matches.length; index += 1) {
-    const match = matches[index];
+  // Guard against pathological inputs: PDF-converted statutes routinely have
+  // hundreds of numbered sub-clauses, list markers, and stray digit-period
+  // fragments that this heading-ish regex will also match. If the count is
+  // extreme, the split is not meaningfully "sections" anymore and scoring
+  // each one individually is what previously blew the compute budget — so
+  // cap it and let the excerpt-window fallback handle the rest.
+  const bounded = matches.slice(0, MAX_SECTION_MATCHES);
+
+  for (let index = 0; index < bounded.length; index += 1) {
+    const match = bounded[index];
     const start = match.index ?? 0;
-    const end = matches[index + 1]?.index ?? text.length;
+    const end = bounded[index + 1]?.index ?? (index === matches.length - 1 ? text.length : (matches[index + 1]?.index ?? text.length));
     const number = match[1].replace(/\s+/g, "");
     const block = text.slice(start, end).trim();
     if (block.length >= 20) sections.push({ label: `Section ${number}`, text: block, start, end });
@@ -470,7 +481,17 @@ function expandedPhrases(query: string): string[] {
   return [...expanded];
 }
 
+function escapedTerm(term: string): string {
+  return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
+/** Compile each phrase's regex exactly once per search, instead of once per section (this was the main cost driver). */
+function compilePhrases(phrases: string[]): CompiledPhrase[] {
+  return phrases.map((phrase) => ({
+    phrase,
+    regex: new RegExp(`\\b${escapedTerm(phrase)}\\b`, "g"),
+  }));
+}
 
 function authorityTypesFor(text: string): string[] {
   const value = normalize(text);
@@ -507,14 +528,12 @@ function metadataScore(row: MetadataRow, phrases: string[]): ScoredRow {
   return { row, score, authorityTypes };
 }
 
-function escapedTerm(term: string): string {
-  return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function textScore(text: string, phrases: string[]): number {
+/** Uses precompiled per-phrase regexes so this can be called once per section without recompiling anything. */
+function textScore(text: string, compiledPhrases: CompiledPhrase[]): number {
   const normalized = normalize(text);
-  return phrases.reduce((score, phrase) => {
-    const matches = normalized.match(new RegExp(`\\b${escapedTerm(phrase)}\\b`, "g"));
+  return compiledPhrases.reduce((score, { phrase, regex }) => {
+    regex.lastIndex = 0;
+    const matches = normalized.match(regex);
     return score + Math.min(matches?.length ?? 0, 12) * (phrase.includes(" ") ? 3 : 1);
   }, 0);
 }
@@ -540,17 +559,17 @@ function excerptAroundTerms(text: string, phrases: string[]): string {
   return windows.join("\n\n[... additional relevant passage ...]\n\n").slice(0, MAX_EXCERPT_CHARS).trim();
 }
 
-function sectionAwareExcerpt(text: string, phrases: string[]): SectionExcerpt {
+function sectionAwareExcerpt(text: string, phrases: string[], compiledPhrases: CompiledPhrase[]): SectionExcerpt {
   const clean = text.replace(/\0/g, "").replace(/[ \t]+\n/g, "\n").trim();
   const sections = extractSections(clean);
   if (sections.length === 0) {
-    return { excerpt: excerptAroundTerms(clean, phrases), score: textScore(clean, phrases), provisions: [] };
+    return { excerpt: excerptAroundTerms(clean, phrases), score: textScore(clean, compiledPhrases), provisions: [] };
   }
 
   const ranked = sections
     .map((section) => ({
       section,
-      score: textScore(section.text, phrases),
+      score: textScore(section.text, compiledPhrases),
     }))
     .sort((a, b) => b.score - a.score || a.section.start - b.section.start);
 
@@ -575,6 +594,7 @@ export async function searchLegalSources(
 ): Promise<LegalSource[]> {
   const phrases = expandedPhrases(query);
   if (phrases.length === 0) return [];
+  const compiledPhrases = compilePhrases(phrases);
 
   if (!metadataPromise) {
     metadataPromise = loadMetadata().catch((error) => {
@@ -590,13 +610,19 @@ export async function searchLegalSources(
   // not forced into every result because the repository currently contains
   // only a placeholder rather than the full constitutional text.
   const candidates = scored
-  .sort((a, b) => b.score - a.score)
-  .slice(0, MAX_FETCHES);
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_METADATA_CANDIDATES)
+    .slice(0, MAX_FETCHES);
 
   const fetched = await Promise.all(candidates.map(async (candidate) => {
     try {
-      const text = await fetchText(rawUrl(candidate.row.text_path));
-      const sectionExcerpt = sectionAwareExcerpt(text, phrases);
+      const rawText = await fetchText(rawUrl(candidate.row.text_path));
+      // Cap the raw text before any processing — nothing downstream needs
+      // more than this to find and score the relevant provisions, and this
+      // is what keeps section-extraction and scoring bounded regardless of
+      // how large the source file on GitHub is.
+      const text = rawText.length > MAX_SOURCE_TEXT_CHARS ? rawText.slice(0, MAX_SOURCE_TEXT_CHARS) : rawText;
+      const sectionExcerpt = sectionAwareExcerpt(text, phrases, compiledPhrases);
       return {
         ...candidate,
         text,
@@ -614,7 +640,7 @@ export async function searchLegalSources(
   return fetched
     .filter((item): item is FetchedRow & { sectionExcerpt: string; provisions: string[] } => Boolean(item))
     .sort((a, b) => (b.textScore + b.score) - (a.textScore + a.score))
-    .filter((item) => item.textScore >= 2)
+    .filter((item) => item.textScore > 0 || item.score > 0)
     .slice(0, limit)
     .map(({ row, text, textScore: score, authorityTypes, sectionExcerpt, provisions }) => ({
       shortId: row.short_id,
