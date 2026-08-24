@@ -18,8 +18,9 @@ const MAX_RESULTS = 8;
 const MAX_EXCERPT_CHARS = 7000;
 const MAX_EXCERPT_WINDOWS = 3;
 const WINDOW_CHARS = 2200;
-const REQUEST_TIMEOUT_MS = 15000;
-const MDA_FETCH_ATTEMPTS = 3;
+const REQUEST_TIMEOUT_MS = 12000;
+const MAX_FETCH_RETRIES = 2; // total attempts = 1 + MAX_FETCH_RETRIES
+const RETRY_BACKOFF_MS = 400;
 
 export type LegalSource = {
   shortId: string;
@@ -147,37 +148,40 @@ function parseCsv(csv: string): MetadataRow[] {
   }).filter((row) => row.short_id && row.text_path);
 }
 
-async function fetchText(url: string, timeoutMs = REQUEST_TIMEOUT_MS): Promise<string> {
+async function fetchTextOnce(url: string): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: { Accept: "text/plain" },
     });
-    if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status}`);
+    if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status} for ${url}`);
     return await response.text();
   } finally {
     clearTimeout(timeout);
   }
 }
 
+async function fetchText(url: string): Promise<string> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_FETCH_RETRIES; attempt += 1) {
+    try {
+      return await fetchTextOnce(url);
+    } catch (error) {
+      lastError = error;
+      console.warn(`fetchText attempt ${attempt + 1}/${MAX_FETCH_RETRIES + 1} failed for ${url}`, error);
+      if (attempt < MAX_FETCH_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function loadMdaCsv(): Promise<string> {
   if (!mdaCsvPromise) {
-    mdaCsvPromise = (async () => {
-      let lastError: unknown;
-      for (let attempt = 1; attempt <= MDA_FETCH_ATTEMPTS; attempt += 1) {
-        try {
-          return await fetchText(rawUrl(MDA_CSV_PATH), REQUEST_TIMEOUT_MS);
-        } catch (error) {
-          lastError = error;
-          if (attempt < MDA_FETCH_ATTEMPTS) {
-            await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
-          }
-        }
-      }
-      throw lastError instanceof Error ? lastError : new Error("MDA CSV fetch failed");
-    })().catch((error) => {
+    mdaCsvPromise = fetchText(rawUrl(MDA_CSV_PATH)).catch((error) => {
       mdaCsvPromise = undefined;
       throw error;
     });
