@@ -57,13 +57,6 @@ STEP 3 — PRODUCE THE ACTIONABLE REPORT as STRICT JSON with this schema and NO 
     "officer": string
   },
   "mda": string,
-  "submission_destination": {
-    "institution": string,
-    "website": string | null,
-    "address_contact": string | null,
-    "why_relevant": string,
-    "verification_note": string
-  },
   "officer": string,
   "constitutional_basis": string,
   "action_plan": string[],
@@ -256,7 +249,7 @@ Deno.serve(async (req) => {
     let retrievedMdaSources: Awaited<ReturnType<typeof searchMdaDirectory>> = [];
     let mdaContext = "";
     try {
-      retrievedMdaSources = await searchMdaDirectory(content, { maxResults: 6 });
+      retrievedMdaSources = await searchMdaDirectory(`${content}\n${retrievedLegalPassages}`, { maxResults: 8 });
       if (retrievedMdaSources.length > 0) {
         // Use the structured parser so the Website and Address / Contact columns
         // cannot be lost or confused with legal rationale text.
@@ -282,7 +275,7 @@ Citizen message:
 
 Run all three steps (Classify -> Identify Tier -> Produce Actionable Report). First identify all materially relevant legal provisions in the retrieved law sources. Then identify the responsible institution in the retrieved MDA directory passages. For each relevant law, provide the exact title and year, section/provision, a short direct source quotation when present or a clearly labelled paraphrase when not, its plain-English meaning, consequence/remedy, and why it applies. Immediately connect the law to the submission destination.
 
-For any relevant MDA, populate "submission_destination" from the source-controlled MDA fields. Copy the institution, website, and address/contact exactly from the retrieved MDA passages; do not omit them or invent replacements. Also populate the existing "mda" field with a readable compatibility summary, and populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. If multiple MDAs may apply, identify a primary institution and clearly label other potentially relevant institutions with the condition that makes them relevant.
+For any relevant MDA, populate the existing "mda" field with the institution name, website, address/contact, why it is relevant, and a verification note. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. If multiple MDAs may apply, identify a primary institution and clearly label other potentially relevant institutions with the condition that makes them relevant.
 
 Use the Civic Action Guide for civic routing and the retrieved law and MDA sources for specific legal foundations and submission destinations. In constitutional_basis, include a source-grounded quotation only if actual constitutional wording is present; otherwise state that the constitutional quotation is unavailable. Do not invent or reconstruct wording. Put all legal and MDA foundations into the existing fields without adding JSON keys. Substitute residence details where applicable. Reply with STRICT JSON only, matching the schema in the system prompt.`;
 
@@ -357,6 +350,7 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
 
       if (retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
         const primaryMda = retrievedMdaSources[0];
+        const secondaryMdas = retrievedMdaSources.slice(1, 4);
         const primaryMdaFields = primaryMda
           ? [
               `Primary institution: ${primaryMda.institution}`,
@@ -373,19 +367,23 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         ].filter(Boolean).join("\n");
 
         report.rationale = appendSection(existingRationale, "MDA SUBMISSION DESTINATION", mdaSubmissionBlock);
-        // Directory values are source-controlled. Keep them in dedicated fields so
-        // the UI/PDF never has to recover them from model-generated prose.
         report.mda = mdaSubmissionBlock;
-        if (retrievedMdaSources.length > 0) {
-          const primary = retrievedMdaSources[0];
+        if (retrievedMdaSources.length > 0 && primaryMda) {
           report.submission_destination = {
-            institution: primary.institution,
-            website: primary.website,
-            address_contact: primary.addressContact,
-            why_relevant: existingRationale || "See the retrieved legal provisions and MDA directory entry.",
+            institution: primaryMda.institution,
+            website: primaryMda.website,
+            address_contact: primaryMda.addressContact,
+            why_relevant: `${primaryMda.mandate} This authority was selected because its mandate and the retrieved legal context match the citizen's issue.`,
             verification_note: "Confirm the current submission channel on the institution's official website before sending.",
           };
-          report.contact = primary.website ?? primary.addressContact ?? existingContact;
+          report.other_relevant_authorities = secondaryMdas.map((source) => ({
+            institution: source.institution,
+            website: source.website,
+            address_contact: source.addressContact,
+            condition: `Consider this authority when the facts specifically concern ${source.mandate.toLowerCase()}`,
+            verification_note: "Confirm the current submission channel on the institution's official website before sending.",
+          }));
+          report.contact = primaryMda.website ?? primaryMda.addressContact ?? existingContact;
         } else if (!existingContact) {
           report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
         }
