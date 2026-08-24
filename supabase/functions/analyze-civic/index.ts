@@ -381,9 +381,9 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       }
 
       if (retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
-        const primaryMda = aiAuthorityName
-          ? selectAiDesignatedMda(retrievedMdaSources, aiAuthorityName)
-          : retrievedMdaSources[0];
+        // searchMdaDirectory already returns exactly one record: the strongest match.
+        // Use it directly instead of matching it a second time against the AI's wording.
+        const primaryMda = retrievedMdaSources[0];
         // The MDA search intentionally returns one strongest match only.
         const secondaryMdas: typeof retrievedMdaSources = [];
         const primaryMdaFields = primaryMda
