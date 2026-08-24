@@ -7,7 +7,6 @@ const LEGAL_REPO_OWNER = "Gates774";
 const LEGAL_REPO_NAME = "TheGate774";
 const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
-const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
 const MDA_CSV_PATH = "laws/mda/nigeria-mda-directory.csv";
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
 const MAX_MDA_RESULTS = 6;
@@ -63,7 +62,6 @@ type SectionExcerpt = { excerpt: string; score: number; provisions: string[] };
 type FetchedRow = ScoredRow & { text: string; textScore: number };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
-let mdaDirectoryPromise: Promise<string> | undefined;
 let mdaCsvPromise: Promise<string> | undefined;
 
 function libraryPath(path: string): string {
@@ -202,16 +200,6 @@ function parseMdaCsv(csv: string): MdaSource[] {
 async function loadMetadata(): Promise<MetadataRow[]> {
   const csv = await fetchText(rawUrl(METADATA_PATH));
   return parseCsv(csv);
-}
-
-async function loadMdaDirectory(): Promise<string> {
-  if (!mdaDirectoryPromise) {
-    mdaDirectoryPromise = fetchText(rawUrl(MDA_DIRECTORY_PATH)).catch((error) => {
-      mdaDirectoryPromise = undefined;
-      throw error;
-    });
-  }
-  return mdaDirectoryPromise;
 }
 
 const STOP_WORDS = new Set([
