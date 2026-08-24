@@ -63,6 +63,14 @@ STEP 3 — PRODUCE THE ACTIONABLE REPORT as STRICT JSON with this schema and NO 
   "rationale": string,
   "next_steps": string[],
   "contact": string,
+  "submission_destination": {
+    "institution": string,
+    "website": string | null,
+    "address_contact": string | null,
+    "why_relevant": string,
+    "verification_note": string
+  },
+  "other_relevant_authorities": Array<object>,
   "confidence": "high" | "medium" | "low",
   "clarifying_question": string | null,
   "out_of_scope": boolean,
@@ -75,7 +83,9 @@ RULES YOU MUST ALWAYS FOLLOW
 - For every complaint or scenario, decompose the facts and identify all materially relevant legal and institutional frameworks supported by the retrieved sources. Do not stop after finding one law or one authority.
 - For each relevant law or institutional framework, identify its exact title and year, exact section/provision when present, a short direct quotation when the wording is present, the legal meaning, consequence or remedy, and the authority responsible for the relevant action.
 - Never reconstruct or guess quotation wording. If exact wording is not present, provide only a clearly labelled paraphrase and state that the exact text should be verified from the official source.
+- Choose the primary responsible institution from the retrieved MDA directory candidates based on the citizen's facts, legal context, institution name, category, aliases, and mandate. Do not default to Nigeria Police Force. Use Nigeria Police Force only when the issue is an ordinary crime, police investigation, theft, robbery, assault, kidnapping, or emergency police matter. For police discipline or misconduct, distinguish Nigeria Police Force from Police Service Commission.
 - When a retrieved MDA directory entry is relevant, identify the institution exactly as written in that entry and include its website and address/contact field. Explain why it is relevant to the quoted law and the user's facts.
+- Set submission_destination.institution to the exact institution you selected from the retrieved candidates. Do not invent submission_destination.website or submission_destination.address_contact; the server will inject those values from the CSV record.
 - In the "mda" field, provide a compact submission block using this format: "Primary institution: ...; Why relevant: ...; Website: ...; Address / Contact: ...; Verification: Confirm the current submission channel on the institution's official website before sending." If more than one institution may be relevant, label the additional institution as "Other potentially relevant institution" and explain the condition.
 - In the "contact" field, provide the best supported website or contact route from the retrieved MDA directory or Civic Action Guide. Do not fabricate a phone number, email address, website, or address.
 - Include the matching MDA submission instruction in "action_plan" as a practical step, but distinguish the institution's role from the actual complaint submission channel when the source does not confirm the channel.
@@ -209,6 +219,33 @@ function appendSection(existing: string, heading: string, body: string): string 
   return [existing.trim(), heading, trimmedBody].filter(Boolean).join("\n\n");
 }
 
+function selectAiDesignatedMda(
+  sources: Awaited<ReturnType<typeof searchMdaDirectory>>,
+  authorityName: string,
+) {
+  const requested = normalize(authorityName);
+  if (!requested) return undefined;
+
+  const exact = sources.find((source) => normalize(source.institution) === requested);
+  if (exact) return exact;
+
+  const containing = sources.find((source) => {
+    const institution = normalize(source.institution);
+    return institution.includes(requested) || requested.includes(institution);
+  });
+  if (containing) return containing;
+
+  const requestedTerms = new Set(requested.split(" ").filter((term) => term.length >= 3));
+  return sources
+    .map((source) => {
+      const institutionTerms = normalize(source.institution).split(" ");
+      const overlap = institutionTerms.filter((term) => requestedTerms.has(term)).length;
+      return { source, overlap };
+    })
+    .filter(({ overlap }) => overlap > 0)
+    .sort((a, b) => b.overlap - a.overlap)[0]?.source;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -325,6 +362,15 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       const existingMda = typeof report.mda === "string" ? report.mda : "";
       const existingContact = typeof report.contact === "string" ? report.contact : "";
 
+      const aiDestination = report.submission_destination && typeof report.submission_destination === "object"
+        ? report.submission_destination as Record<string, unknown>
+        : undefined;
+      const aiAuthorityName = typeof aiDestination?.institution === "string"
+        ? aiDestination.institution
+        : report.responsible_authority && typeof report.responsible_authority === "object"
+          ? String((report.responsible_authority as Record<string, unknown>).name ?? "")
+          : "";
+
       if (retrievedLegalPassages) {
         report.rationale = appendSection(
           existingRationale,
@@ -334,8 +380,10 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       }
 
       if (retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
-        const primaryMda = retrievedMdaSources[0];
-        const secondaryMdas = retrievedMdaSources.slice(1, 4);
+        const primaryMda = aiAuthorityName
+          ? selectAiDesignatedMda(retrievedMdaSources, aiAuthorityName)
+          : retrievedMdaSources[0];
+        const secondaryMdas = retrievedMdaSources.filter((source) => source !== primaryMda).slice(0, 3);
         const primaryMdaFields = primaryMda
           ? [
               `Primary institution: ${primaryMda.institution}`,
