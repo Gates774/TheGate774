@@ -23,6 +23,7 @@ export interface ComplaintAnalysis {
   issue_summary?: string;
   responsible_authority?: { name?: string; tier?: string; officer?: string };
   mda?: string;
+  contact?: string;
   officer?: string;
   constitutional_basis?: string;
   action_plan?: string[];
