@@ -269,7 +269,7 @@ export function ComplaintReportCard({
       </header>
 
       {/* Route-to line — MDA mention #1 of 2: a short addressee reference, like the
-          "To:" line on a formal letter. Full details live in Section 03 below. */}
+          "To:" line on a formal letter. Full details live in Section 02 below. */}
       {primaryInstitution && (
         <div className="border-b border-foreground/15 bg-foreground/[0.025] px-4 sm:px-10 py-3 flex items-center gap-2.5 print-break-inside-avoid">
           <Building2 className="h-3.5 w-3.5 text-foreground/55 shrink-0" strokeWidth={1.75} />
@@ -314,19 +314,9 @@ export function ComplaintReportCard({
           </p>
         </Section>
 
-        {legalRationale && (
-          <Section label="02 — Retrieved legal provisions" icon={ScrollText}>
-            <div className="rounded-sm border border-foreground/15 bg-foreground/[0.02] px-4 py-3.5 sm:px-5 sm:py-4 print-break-inside-avoid">
-              <p className="text-[13px] sm:text-[14px] leading-[1.75] text-foreground/90 whitespace-pre-wrap">
-                {legalRationale}
-              </p>
-            </div>
-          </Section>
-        )}
-
         {/* MDA mention #2 of 2 — the only place full institution details are shown. */}
         {hasSubmissionInfo && (
-          <Section label="03 — Where to submit this report" icon={Building2}>
+          <Section label="02 — Where to submit this report" icon={Building2}>
             <div>
               <div className="rounded-sm border border-foreground/15 bg-foreground/[0.025] p-4 sm:p-5 print-break-inside-avoid">
                   <dl className="space-y-3">
@@ -353,7 +343,7 @@ export function ComplaintReportCard({
           </Section>
         )}
 
-        <Section label="04 — Responsible authority" icon={Landmark}>
+        <Section label="03 — Responsible authority" icon={Landmark}>
           <dl className="divide-y divide-foreground/10 border-y border-foreground/10">
             <Row label="Responsible body" value={authority} />
             <Row label="Accountable officer" value={officer} />
@@ -363,7 +353,7 @@ export function ComplaintReportCard({
         </Section>
 
         {steps.length > 0 && (
-          <Section label="05 — Recommended course of action" icon={CheckCircle2}>
+          <Section label="04 — Recommended course of action" icon={CheckCircle2}>
             <ol className="space-y-3 sm:space-y-4">
               {steps.map((s, i) => (
                 <li key={i} className="flex gap-3 sm:gap-4 text-[14px] sm:text-[15px] leading-[1.7] print-break-inside-avoid">
@@ -378,7 +368,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.documents_needed && analysis.documents_needed.length > 0 && (
-          <Section label="06 — Documents to prepare" icon={FileCheck2}>
+          <Section label="05 — Documents to prepare" icon={FileCheck2}>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               {analysis.documents_needed.map((d) => (
                 <li key={d} className="flex items-start gap-3 text-[14px] leading-relaxed py-1 border-b border-dashed border-foreground/10">
@@ -391,7 +381,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.escalation_path && analysis.escalation_path.length > 0 && (
-          <Section label="07 — Escalation pathway" icon={ArrowUpRight}>
+          <Section label="06 — Escalation pathway" icon={ArrowUpRight}>
             <ol className="space-y-2 border-l border-foreground/15 pl-4 sm:pl-5">
               {analysis.escalation_path.map((e, i) => (
                 <li key={i} className="relative text-[13.5px] sm:text-[14px] leading-relaxed text-foreground/85 break-words">
@@ -415,7 +405,7 @@ export function ComplaintReportCard({
         )}
 
         {analysis.sources && analysis.sources.length > 0 && (
-          <Section label="08 — Source authorities" icon={Link2}>
+          <Section label="07 — Source authorities" icon={Link2}>
             <ul className="space-y-1.5">
               {analysis.sources.map((s, i) => (
                 <li key={i} className="text-[13px] flex items-start gap-3 text-foreground/75">
