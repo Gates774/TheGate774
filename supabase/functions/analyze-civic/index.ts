@@ -1,8 +1,4 @@
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { CIVIC_GUIDE } from "./civic_guide.ts";
 import { formatLegalSources, searchLegalSources, searchMdaDirectory, formatMdaSources } from "./legal-search.ts";
 
@@ -87,10 +83,10 @@ RULES YOU MUST ALWAYS FOLLOW
 - For every complaint or scenario, decompose the facts and identify all materially relevant legal and institutional frameworks supported by the retrieved sources. Do not stop after finding one law or one authority.
 - For each relevant law or institutional framework, identify its exact title and year, exact section/provision when present, a short direct quotation when the wording is present, the legal meaning, consequence or remedy, and the authority responsible for the relevant action.
 - Never reconstruct or guess quotation wording. If exact wording is not present, provide only a clearly labelled paraphrase and state that the exact text should be verified from the official source.
-- Choose the primary responsible institution from the single retrieved MDA directory match based on the citizen's facts, institution name, category, aliases, and mandate. Do not default to Nigeria Police Force. Use Nigeria Police Force only when the issue is an ordinary crime, police investigation, theft, robbery, assault, kidnapping, or emergency police matter. For police discipline or misconduct, distinguish Nigeria Police Force from Police Service Commission.
-- When the retrieved MDA directory entry is relevant, identify that institution exactly as written in the entry and include its website and address/contact field. Do not introduce additional MDA institutions that are not the single retrieved match. Explain why it is relevant to the quoted law and the user's facts.
-- Set submission_destination.institution to the exact institution in the single retrieved MDA match. Do not invent submission_destination.website or submission_destination.address_contact; the server will inject those values from the CSV record.
-- In the "mda" field, provide a compact submission block using this format: "Primary institution: ...; Why relevant: ...; Website: ...; Address / Contact: ...; Verification: Confirm the current submission channel on the institution's official website before sending." Do not list additional MDA institutions.
+- Choose the primary responsible institution from the retrieved MDA directory candidates based on the citizen's facts, legal context, institution name, category, aliases, and mandate. Do not default to Nigeria Police Force. Use Nigeria Police Force only when the issue is an ordinary crime, police investigation, theft, robbery, assault, kidnapping, or emergency police matter. For police discipline or misconduct, distinguish Nigeria Police Force from Police Service Commission.
+- When a retrieved MDA directory entry is relevant, identify the institution exactly as written in that entry and include its website and address/contact field. Explain why it is relevant to the quoted law and the user's facts.
+- Set submission_destination.institution to the exact institution you selected from the retrieved candidates. Do not invent submission_destination.website or submission_destination.address_contact; the server will inject those values from the CSV record.
+- In the "mda" field, provide a compact submission block using this format: "Primary institution: ...; Why relevant: ...; Website: ...; Address / Contact: ...; Verification: Confirm the current submission channel on the institution's official website before sending." If more than one institution may be relevant, label the additional institution as "Other potentially relevant institution" and explain the condition.
 - In the "contact" field, provide the best supported website or contact route from the retrieved MDA directory or Civic Action Guide. Do not fabricate a phone number, email address, website, or address.
 - Include the matching MDA submission instruction in "action_plan" as a practical step, but distinguish the institution's role from the actual complaint submission channel when the source does not confirm the channel.
 - Put the complete source-grounded legal and MDA explanation into "rationale". Keep it readable in the report and preserve the following structure when applicable: law title and year; section/provision; quotation or labelled paraphrase; meaning; application; WHERE TO SUBMIT THIS REPORT; primary institution; website; address/contact; verification note.
@@ -278,7 +274,9 @@ Deno.serve(async (req) => {
     let retrievedMdaSources: Awaited<ReturnType<typeof searchMdaDirectory>> = [];
     let mdaContext = "";
     try {
-      retrievedMdaSources = await searchMdaDirectory(content, { maxResults: 1 });
+      retrievedMdaSources = await searchMdaDirectory(`${content}\n${retrievedLegalPassages}`, { maxResults: 8 });
+      console.log("[analyze-civic] searchMdaDirectory returned", retrievedMdaSources.length, "candidates:",
+        retrievedMdaSources.slice(0, 3).map((s) => s.institution));
       if (retrievedMdaSources.length > 0) {
         // Use the structured parser so the Website and Address / Contact columns
         // cannot be lost or confused with legal rationale text.
@@ -301,9 +299,9 @@ Citizen message:
 
 Run all three steps (Classify -> Identify Tier -> Produce Actionable Report). First identify all materially relevant legal provisions in the retrieved law sources. Then identify the responsible institution in the retrieved MDA directory passages. For each relevant law, provide the exact title and year, section/provision, a short direct source quotation when present or a clearly labelled paraphrase when not, its plain-English meaning, consequence/remedy, and why it applies. Immediately connect the law to the submission destination.
 
-For the single retrieved MDA, populate the existing "mda" field with its institution name, website, address/contact, why it is relevant, and a verification note. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. Do not list or introduce any additional MDA.
+For any relevant MDA, populate the existing "mda" field with the institution name, website, address/contact, why it is relevant, and a verification note. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. If multiple MDAs may apply, identify a primary institution and clearly label other potentially relevant institutions with the condition that makes them relevant.
 
-Use the Civic Action Guide for civic routing and the retrieved law and MDA source for specific legal foundations and the single submission destination. Do not list, recommend, or introduce any additional MDA. In constitutional_basis, include a source-grounded quotation only if actual constitutional wording is present; otherwise state that the constitutional quotation is unavailable. Do not invent or reconstruct wording. Put all legal and MDA foundations into the existing fields without adding JSON keys. Substitute residence details where applicable. Reply with STRICT JSON only, matching the schema in the system prompt.`;
+Use the Civic Action Guide for civic routing and the retrieved law and MDA sources for specific legal foundations and submission destinations. In constitutional_basis, include a source-grounded quotation only if actual constitutional wording is present; otherwise state that the constitutional quotation is unavailable. Do not invent or reconstruct wording. Put all legal and MDA foundations into the existing fields without adding JSON keys. Substitute residence details where applicable. Reply with STRICT JSON only, matching the schema in the system prompt.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -369,12 +367,24 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       const aiDestination = report.submission_destination && typeof report.submission_destination === "object"
         ? report.submission_destination as Record<string, unknown>
         : undefined;
-      const aiAuthorityName = typeof aiDestination?.institution === "string"
-        ? aiDestination.institution
-        : report.responsible_authority && typeof report.responsible_authority === "object"
-          ? String((report.responsible_authority as Record<string, unknown>).name ?? "")
-          : "";
-      report.other_relevant_authorities = [];
+      const aiDestinationInstitution = typeof aiDestination?.institution === "string" ? aiDestination.institution.trim() : "";
+      const aiResponsibleAuthorityName = report.responsible_authority && typeof report.responsible_authority === "object"
+        ? String((report.responsible_authority as Record<string, unknown>).name ?? "").trim()
+        : "";
+      // Bug fix: the AI's schema requires submission_destination.institution as a
+      // string, so it often comes back as "" when no MDA candidates were retrieved.
+      // The previous check only tested `typeof === "string"`, which is true for ""
+      // too, so it never fell through to responsible_authority.name — leaving
+      // aiAuthorityName empty and skipping the fallback below entirely.
+      const aiAuthorityName = aiDestinationInstitution || aiResponsibleAuthorityName;
+
+      console.log("[analyze-civic] MDA diagnostics", {
+        retrievedMdaSourceCount: retrievedMdaSources.length,
+        retrievedMdaExcerptEmpty: !retrievedMdaExcerpt,
+        aiDestinationInstitution,
+        aiResponsibleAuthorityName,
+        aiAuthorityName,
+      });
 
       if (retrievedLegalPassages) {
         report.rationale = appendSection(
@@ -385,11 +395,10 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       }
 
       if (retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
-        // searchMdaDirectory already returns exactly one record: the strongest match.
-        // Use it directly instead of matching it a second time against the AI's wording.
-        const primaryMda = retrievedMdaSources[0];
-        // The MDA search intentionally returns one strongest match only.
-        const secondaryMdas: typeof retrievedMdaSources = [];
+        const primaryMda = aiAuthorityName
+          ? selectAiDesignatedMda(retrievedMdaSources, aiAuthorityName)
+          : retrievedMdaSources[0];
+        const secondaryMdas = retrievedMdaSources.filter((source) => source !== primaryMda).slice(0, 3);
         const primaryMdaFields = primaryMda
           ? [
               `Primary institution: ${primaryMda.institution}`,
@@ -399,11 +408,9 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
           : "";
         const mdaSubmissionBlock = [
           "WHERE TO SUBMIT THIS REPORT",
+          "The following MDA directory data is source-grounded. Use the primary institution identified by the legal analysis and verify the current submission channel before sending.",
           primaryMdaFields,
-          primaryMda
-            ? `Why relevant: ${primaryMda.mandate}`
-            : "Why relevant: The strongest MDA match was selected from the citizen's message.",
-          "Verification: Confirm the current submission channel on the institution's official website before sending.",
+          retrievedMdaExcerpt,
           `Directory source: ${MDA_SOURCE_LABEL}`,
         ].filter(Boolean).join("\n");
 
@@ -428,34 +435,32 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         } else if (!existingContact) {
           report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
         }
-      } else if (aiAuthorityName) {
-        const aiWhyRelevant = typeof aiDestination?.why_relevant === "string"
-          ? aiDestination.why_relevant
-          : "The AI identified this institution as the most relevant authority for the reported facts.";
-        const fallbackMdaBlock = [
-          "WHERE TO SUBMIT THIS REPORT",
-          `Primary institution: ${aiAuthorityName}`,
-          "Website: —",
-          "Address / Contact: —",
-          aiWhyRelevant,
-          "The GitHub MDA directory could not be retrieved. Confirm the current official submission channel before sending.",
-        ].join("\n");
-
+      } else if (aiAuthorityName && !report.submission_destination) {
+        // The GitHub-hosted MDA directory returned no candidates for this request
+        // (fetch failure/timeout after retries, or genuinely no scoring match).
+        // Previously this left submission_destination unset entirely, so the
+        // Institution/Website/Address fields rendered as "—" even though the AI
+        // (via the Civic Action Guide) already knew the right institution.
+        // Website/address are intentionally left null here rather than invented.
+        const fallbackNote = "The live MDA directory lookup did not return a match for this request, so only the institution name is shown here. Search for this institution's official website and contact details directly, and verify before submitting.";
         report.submission_destination = {
           institution: aiAuthorityName,
           website: null,
           address_contact: null,
-          why_relevant: aiWhyRelevant,
-          verification_note: "The GitHub MDA directory was unavailable. Confirm the current submission channel on the institution's official website before sending.",
+          why_relevant: "Identified from the Civic Action Guide and the citizen's facts; not cross-checked against the MDA directory for this request.",
+          verification_note: fallbackNote,
         };
-        report.mda = fallbackMdaBlock;
-        report.rationale = appendSection(existingRationale, "MDA SUBMISSION DESTINATION", fallbackMdaBlock);
+        report.mda = appendSection(
+          existingMda,
+          "WHERE TO SUBMIT THIS REPORT",
+          `Primary institution: ${aiAuthorityName}\n${fallbackNote}`,
+        );
         if (!existingContact) {
-          report.contact = "Official contact details unavailable; verify the current submission channel on the selected institution's official website.";
+          report.contact = `Directory lookup unavailable — verify ${aiAuthorityName}'s official contact channel directly.`;
         }
       }
 
-      if (Array.isArray(report.action_plan) && retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
+      if (Array.isArray(report.action_plan) && report.submission_destination) {
         const steps = report.action_plan.map((step) => String(step));
         if (!steps.some((step) => /mda|website|institution|submit|complaint channel|regulatory authority/i.test(step))) {
           steps.push("Confirm the primary institution's current official submission channel using the website and address/contact shown in the MDA directory block before sending this report.");
