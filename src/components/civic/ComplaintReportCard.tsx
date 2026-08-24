@@ -24,6 +24,14 @@ export interface ComplaintAnalysis {
   responsible_authority?: { name?: string; tier?: string; officer?: string };
   mda?: string;
   contact?: string;
+  submission_destination?: {
+    institution?: string;
+    website?: string | null;
+    address_contact?: string | null;
+    why_relevant?: string;
+    verification_note?: string;
+  };
+  mda_status?: "matched" | "no_match" | "unavailable";
   officer?: string;
   constitutional_basis?: string;
   action_plan?: string[];
@@ -264,7 +272,7 @@ function parseMdaRows(directory: string): Array<{ institution: string; website: 
   const lines = directory.replace(/\r/g, "").split("\n");
   const rows: Array<{ institution: string; website: string; addressContact: string; category: string; lineIndex: number }> = [];
   let category = "";
-  const rowPattern = /^\s*(.*?)\s{2,}((?:https?:\/\/)?[A-Za-z0-9.-]+\.(?:gov\.ng|org|com|net|ng)|—)\s{2,}(.*?)\s*$/;
+  const rowPattern = /^\s*(.*?)\s{2,}((?:https?:\/\/)?(?:www\.)?[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+(?:\/[^\s]*)?|—)\s{2,}(.*?)\s*$/;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index].trimEnd();
@@ -272,27 +280,23 @@ function parseMdaRows(directory: string): Array<{ institution: string; website: 
     if (heading && !/^\d+\.$/.test(heading[2].trim())) category = heading[2].trim();
     const match = line.match(rowPattern);
     if (!match) continue;
-    let institution = match[1].replace(/\s+/g, " ").trim();
+    const institution = match[1].replace(/\s+/g, " ").trim();
     const website = match[2].trim();
-    const addressContact = match[3].replace(/\s+/g, " ").trim();
+    const addressParts = [match[3].replace(/\s+/g, " ").trim()];
 
-    // The PDF conversion wraps long institution names onto the next line.
-    // Join those continuation lines so the report receives the complete name.
+    // Preserve wrapped address/contact lines until the next row or heading.
     let continuationIndex = index + 1;
     while (continuationIndex < lines.length) {
       const continuation = lines[continuationIndex].trim();
-      if (!continuation || /^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact)/i.test(continuation)) break;
+      if (!continuation) break;
       if (/^\d{1,2}\.\s+/.test(continuation) || rowPattern.test(lines[continuationIndex])) break;
-      if (/^(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))(?:\s+(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))){0,8}$/.test(continuation)) {
-        institution = `${institution} ${continuation}`.replace(/\s+/g, " ").trim();
-        continuationIndex += 1;
-        continue;
-      }
-      break;
+      if (/^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact|Contents)$/i.test(continuation)) break;
+      addressParts.push(continuation.replace(/\s+/g, " "));
+      continuationIndex += 1;
     }
 
     if (!institution || institution.toLowerCase() === "institution") continue;
-    rows.push({ institution, website, addressContact, category, lineIndex: index });
+    rows.push({ institution, website, addressContact: addressParts.filter(Boolean).join(" ").trim(), category, lineIndex: index });
   }
 
   return rows;
@@ -756,10 +760,15 @@ export function ComplaintReportCard({
         {(analysis.mda || analysis.contact || analysis.rationale) && (
           <Section label="03 — Where to submit this report" icon={Building2}>
             <div className="space-y-4">
-              {(analysis.mda || analysis.contact) && (() => {
-                const institution = extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
-                const website = extractMdaField(analysis.mda, ["Website"]) ?? (isWebsite(analysis.contact) ? analysis.contact : undefined);
-                const address = extractMdaAddressContact(analysis);
+              {(analysis.mda || analysis.contact || analysis.submission_destination) && (() => {
+                const destination = analysis.submission_destination;
+                const institution = destination?.institution
+                  ?? extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
+                const website = destination?.website
+                  ?? extractMdaField(analysis.mda, ["Website"])
+                  ?? (isWebsite(analysis.contact) ? analysis.contact : undefined);
+                const address = destination?.address_contact
+                  ?? extractMdaAddressContact(analysis);
                 return (
                   <dl className="space-y-3">
                     {institution && (
@@ -771,7 +780,18 @@ export function ComplaintReportCard({
                     {website && (
                       <div>
                         <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Website</dt>
-                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">{website}</dd>
+                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">
+                        {website ? (
+                          <a
+                            href={website.startsWith("http") ? website : `https://${website}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline underline-offset-2"
+                          >
+                            {website}
+                          </a>
+                        ) : "Not listed"}
+                      </dd>
                       </div>
                     )}
                     <div>
@@ -789,10 +809,10 @@ export function ComplaintReportCard({
                   <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.mda}</p>
                 </div>
               )}
-              {!analysis.mda && !analysis.contact && analysis.rationale && (
+              {!analysis.mda && !analysis.contact && !analysis.submission_destination && analysis.rationale && (
                 <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.rationale}</p>
               )}
-              {(analysis.mda || analysis.contact) && (
+              {(analysis.mda || analysis.contact || analysis.submission_destination) && (
                 <p className="text-[12px] sm:text-[13px] leading-[1.6] text-foreground/60">
                   Directory source: Nigerian MDA directory.
                 </p>
