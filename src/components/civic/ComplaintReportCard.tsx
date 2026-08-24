@@ -136,10 +136,23 @@ function extractMdaAddressContact(analysis: ComplaintAnalysis): string | undefin
  */
 function legalRationaleOnly(rationale?: string): string | undefined {
   if (!rationale) return undefined;
-  const cutIndex = rationale.search(/\n{1,2}MDA SUBMISSION DESTINATION\b/i);
-  const trimmed = (cutIndex >= 0 ? rationale.slice(0, cutIndex) : rationale).trim();
-  const withoutHeading = trimmed.replace(/^RETRIEVED LEGAL PROVISIONS\s*\n+/i, "").trim();
-  return withoutHeading || undefined;
+
+  // Remove legacy appended submission blocks from already-generated responses.
+  const cutIndex = rationale.search(/\n{1,2}(?:MDA SUBMISSION DESTINATION|WHERE TO SUBMIT THIS REPORT)\b/i);
+  const trimmed = (cutIndex >= 0 ? rationale.slice(0, cutIndex) : rationale)
+    .replace(/^RETRIEVED LEGAL PROVISIONS\s*\n+/i, "")
+    .trim();
+
+  // The backend requests plain text, but older responses may contain Markdown
+  // emphasis. Remove the markers while preserving the wording and line breaks.
+  const cleanText = trimmed
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^\s*#{1,6}\s+/gm, "")
+    .trim();
+
+  return cleanText || undefined;
 }
 
 export function ComplaintReportCard({
@@ -303,16 +316,19 @@ export function ComplaintReportCard({
 
         {legalRationale && (
           <Section label="02 — Retrieved legal provisions" icon={ScrollText}>
-            <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{legalRationale}</p>
+            <div className="rounded-sm border border-foreground/15 bg-foreground/[0.02] px-4 py-3.5 sm:px-5 sm:py-4 print-break-inside-avoid">
+              <p className="text-[13px] sm:text-[14px] leading-[1.75] text-foreground/90 whitespace-pre-wrap">
+                {legalRationale}
+              </p>
+            </div>
           </Section>
         )}
 
         {/* MDA mention #2 of 2 — the only place full institution details are shown. */}
-        {(hasSubmissionInfo || analysis.other_relevant_authorities?.length) && (
+        {hasSubmissionInfo && (
           <Section label="03 — Where to submit this report" icon={Building2}>
-            <div className="space-y-4">
-              {hasSubmissionInfo ? (
-                <div className="rounded-sm border border-foreground/15 bg-foreground/[0.025] p-4 sm:p-5 print-break-inside-avoid">
+            <div>
+              <div className="rounded-sm border border-foreground/15 bg-foreground/[0.025] p-4 sm:p-5 print-break-inside-avoid">
                   <dl className="space-y-3">
                     <div>
                       <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Institution</dt>
@@ -332,31 +348,7 @@ export function ComplaintReportCard({
                       {destination.why_relevant}
                     </p>
                   )}
-                </div>
-              ) : (
-                <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/60 italic">
-                  A specific submission destination was not identified for this issue. Follow the recommended steps below, or consult the Legal Aid Council of Nigeria.
-                </p>
-              )}
-
-              {analysis.other_relevant_authorities && analysis.other_relevant_authorities.length > 0 && (
-                <div className="space-y-3 border-t border-foreground/10 pt-4">
-                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold">Other potentially relevant authorities</p>
-                  {analysis.other_relevant_authorities.map((auth, index) => (
-                    <div key={`${auth.institution ?? "authority"}-${index}`} className="rounded-sm border border-foreground/10 p-3">
-                      <p className="font-semibold text-[13px] sm:text-[14px]">{auth.institution || "—"}</p>
-                      <p className="text-[13px] leading-[1.7] break-words text-foreground/80">Website: {auth.website || "—"}</p>
-                      <p className="text-[13px] leading-[1.7] break-words text-foreground/80">Address / Contact: {auth.address_contact || "—"}</p>
-                      {auth.condition && <p className="text-[12px] leading-[1.6] text-foreground/60 mt-1">{auth.condition}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <p className="text-[12px] sm:text-[13px] leading-[1.6] text-foreground/60 italic">
-                {destination?.verification_note
-                  ?? "Verify the current submission channel and address on the institution's official website before sending any physical or electronic report."}
-              </p>
+              </div>
             </div>
           </Section>
         )}
