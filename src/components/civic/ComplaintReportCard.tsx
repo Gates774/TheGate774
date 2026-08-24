@@ -718,13 +718,24 @@ export function ComplaintReportCard({
           <Section label="03 — Where to submit this report" icon={Building2}>
             <div className="space-y-4">
               {analysis.mda && (
-                <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.mda}</p>
+                <div>
+                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Institution</p>
+                  <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.mda}</p>
+                </div>
               )}
               {analysis.contact && (
-                <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.contact}</p>
+                <div>
+                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Website / Address / Contact</p>
+                  <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.contact}</p>
+                </div>
               )}
               {!analysis.mda && !analysis.contact && analysis.rationale && (
                 <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.rationale}</p>
+              )}
+              {(analysis.mda || analysis.contact) && (
+                <p className="text-[12px] sm:text-[13px] leading-[1.6] text-foreground/60">
+                  Directory source: Nigerian MDA directory.
+                </p>
               )}
               <p className="text-[12px] sm:text-[13px] leading-[1.6] text-foreground/60 italic">
                 Verify the current submission channel and address on the institution's official website before sending any physical or electronic report.
