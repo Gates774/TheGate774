@@ -1,6 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { CIVIC_GUIDE } from "./civic_guide.ts";
-import { formatLegalSources, searchLegalSources } from "./legal-search.ts";
+import { formatLegalSources, searchLegalSources, searchMdaDirectory, formatMdaSources } from "./legal-search.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
@@ -246,10 +246,18 @@ Deno.serve(async (req) => {
     }
 
     let retrievedMdaExcerpt = "";
+    let retrievedMdaSources: Awaited<ReturnType<typeof searchMdaDirectory>> = [];
     let mdaContext = "";
     try {
-      const directory = await loadMdaDirectory();
-      retrievedMdaExcerpt = relevantMdaExcerpt(directory, content);
+      retrievedMdaSources = await searchMdaDirectory(content, { maxResults: 6 });
+      if (retrievedMdaSources.length > 0) {
+        // Use the structured parser so the Website and Address / Contact columns
+        // cannot be lost or confused with legal rationale text.
+        retrievedMdaExcerpt = formatMdaSources(retrievedMdaSources);
+      } else {
+        const directory = await loadMdaDirectory();
+        retrievedMdaExcerpt = relevantMdaExcerpt(directory, content);
+      }
       mdaContext = `\n\n${mdaContextBlock(retrievedMdaExcerpt)}`;
     } catch (error) {
       console.warn("MDA directory retrieval skipped", error);
@@ -341,18 +349,34 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       }
 
       if (retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
+        const primaryMda = retrievedMdaSources[0];
+        const primaryMdaFields = primaryMda
+          ? [
+              `Primary institution: ${primaryMda.institution}`,
+              `Website: ${primaryMda.website === "—" ? "Not listed" : primaryMda.website}`,
+              `Address / Contact: ${primaryMda.addressContact || "Not listed"}`,
+            ].join("\n")
+          : "";
         const mdaSubmissionBlock = [
           "WHERE TO SUBMIT THIS REPORT",
-          "The following MDA directory entries are the source candidates for the submission destination. Use the primary institution identified by the legal analysis and verify the current submission channel before sending.",
+          "The following MDA directory data is source-grounded. Use the primary institution identified by the legal analysis and verify the current submission channel before sending.",
+          primaryMdaFields,
           retrievedMdaExcerpt,
           `Directory source: ${MDA_SOURCE_LABEL}`,
-        ].join("\n");
+        ].filter(Boolean).join("\n");
 
-        report.rationale = appendSection(report.rationale as string ?? "", "MDA SUBMISSION DESTINATION", mdaSubmissionBlock);
-        report.mda = existingMda
-          ? `${existingMda}\n\n${mdaSubmissionBlock}`
-          : mdaSubmissionBlock;
-        if (!existingContact) report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
+        report.rationale = appendSection(existingRationale, "MDA SUBMISSION DESTINATION", mdaSubmissionBlock);
+        // Replace the model's free-form MDA value with the structured directory
+        // result so Website and Address / Contact remain attached to the report.
+        report.mda = mdaSubmissionBlock;
+        if (retrievedMdaSources.length > 0) {
+          const primary = retrievedMdaSources[0];
+          report.contact = primary.website && primary.website !== "—"
+            ? primary.website
+            : (primary.addressContact || existingContact);
+        } else if (!existingContact) {
+          report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
+        }
       }
 
       if (Array.isArray(report.action_plan) && retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
