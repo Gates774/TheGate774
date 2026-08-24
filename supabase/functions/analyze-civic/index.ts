@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
     let legalContext = "";
     let retrievedLegalPassages = "";
     try {
-      const legalSources = await searchLegalSources(content, { maxResults: 1 });
+      const legalSources = await searchLegalSources(content, { maxResults: 2 });
       if (legalSources.length > 0) {
         retrievedLegalPassages = formatLegalSources(legalSources);
         legalContext = `\n\n========== RETRIEVED LEGAL SOURCES (SUPPLEMENTAL) ==========\n${retrievedLegalPassages}\n========== END RETRIEVED LEGAL SOURCES ==========`;
