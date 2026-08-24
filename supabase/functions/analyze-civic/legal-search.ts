@@ -9,17 +9,18 @@ const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 const MDA_CSV_PATH = "laws/mda/nigeria-mda-directory.csv";
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
-const MAX_MDA_RESULTS = 1;
+const MAX_MDA_RESULTS = 6;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
 const MAX_METADATA_CANDIDATES = 32;
-const MAX_FETCHES = 16;
-const MAX_RESULTS = 8;
+const MAX_FETCHES = 1;
+const MAX_RESULTS = 1;
 const MAX_EXCERPT_CHARS = 7000;
 const MAX_EXCERPT_WINDOWS = 3;
 const WINDOW_CHARS = 2200;
-const REQUEST_TIMEOUT_MS = 15000;
-const MDA_FETCH_ATTEMPTS = 3;
+const REQUEST_TIMEOUT_MS = 12000;
+const MAX_FETCH_RETRIES = 2; // total attempts = 1 + MAX_FETCH_RETRIES
+const RETRY_BACKOFF_MS = 400;
 
 export type LegalSource = {
   shortId: string;
@@ -147,37 +148,40 @@ function parseCsv(csv: string): MetadataRow[] {
   }).filter((row) => row.short_id && row.text_path);
 }
 
-async function fetchText(url: string, timeoutMs = REQUEST_TIMEOUT_MS): Promise<string> {
+async function fetchTextOnce(url: string): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: { Accept: "text/plain" },
     });
-    if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status}`);
+    if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status} for ${url}`);
     return await response.text();
   } finally {
     clearTimeout(timeout);
   }
 }
 
+async function fetchText(url: string): Promise<string> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_FETCH_RETRIES; attempt += 1) {
+    try {
+      return await fetchTextOnce(url);
+    } catch (error) {
+      lastError = error;
+      console.warn(`fetchText attempt ${attempt + 1}/${MAX_FETCH_RETRIES + 1} failed for ${url}`, error);
+      if (attempt < MAX_FETCH_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function loadMdaCsv(): Promise<string> {
   if (!mdaCsvPromise) {
-    mdaCsvPromise = (async () => {
-      let lastError: unknown;
-      for (let attempt = 1; attempt <= MDA_FETCH_ATTEMPTS; attempt += 1) {
-        try {
-          return await fetchText(rawUrl(MDA_CSV_PATH), REQUEST_TIMEOUT_MS);
-        } catch (error) {
-          lastError = error;
-          if (attempt < MDA_FETCH_ATTEMPTS) {
-            await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
-          }
-        }
-      }
-      throw lastError instanceof Error ? lastError : new Error("MDA CSV fetch failed");
-    })().catch((error) => {
+    mdaCsvPromise = fetchText(rawUrl(MDA_CSV_PATH)).catch((error) => {
       mdaCsvPromise = undefined;
       throw error;
     });
@@ -202,7 +206,7 @@ function parseMdaCsv(csv: string): MdaSource[] {
       mandate: profile.mandate,
       aliases: profile.aliases,
       issueTerms: profile.issueTerms,
-      jurisdiction: /state/i.test(row.category ?? "") ? "state" as const : "federal" as const,
+      jurisdiction: /state/i.test(row.category ?? "") ? "state" : "federal",
       sourcePath: row.source_file?.trim() || MDA_CSV_PATH,
       source_file: row.source_file?.trim() || MDA_CSV_PATH,
       matchStrength: "moderate" as const,
@@ -352,18 +356,16 @@ function authorityProfile(institution: string, category: string): { mandate: str
   return {
     mandate: `${category || "Public institution"} responsibilities as described by the Nigerian MDA directory.`,
     aliases: [],
-    // Generic institutions are matched by their institution and category fields
-    // below. Do not copy either field into issueTerms, or one hit is counted twice.
-    issueTerms: [],
+    issueTerms: [category, institution].filter(Boolean),
   };
 }
 
 function authorityScore(source: MdaSource, query: string): number {
   const value = normalize(query);
   const tokens = new Set(value.split(" ").filter((term) => term.length >= 3));
-  const terms = [...new Set([...source.aliases, ...source.issueTerms, source.institution, source.category]
+  const terms = [...source.aliases, ...source.issueTerms, source.institution, source.category]
     .map(normalize)
-    .filter((term) => term.length >= 3))];
+    .filter((term) => term.length >= 3);
   let score = 0;
   for (const term of terms) {
     const matches = term.includes(" ") ? value.includes(term) : tokens.has(term);
@@ -418,16 +420,13 @@ export async function searchMdaDirectory(
     })
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || a.source.institution.localeCompare(b.source.institution))
-    // Only the single strongest MDA is passed downstream. Sending several
-    // candidates lets weak matches dilute the primary authority decision.
-    .slice(0, 1)
+    .slice(0, options.maxResults ?? MAX_MDA_RESULTS)
     .map(({ source, score }) => ({ ...source, matchStrength: score >= 20 ? "strong" : "moderate" as const }));
 }
 
 export function formatMdaSources(sources: MdaSource[]): string {
-  const strongestSource = sources[0];
-  if (!strongestSource) return "";
-  return [strongestSource].map((source, index) => [
+  if (sources.length === 0) return "";
+  return sources.map((source, index) => [
     `[MDA source ${index + 1} — ${source.matchStrength} match] ${source.institution}`,
     `Category: ${source.category || "Not specified in directory"}`,
     `Mandate: ${source.mandate}`,
@@ -591,9 +590,8 @@ export async function searchLegalSources(
   // not forced into every result because the repository currently contains
   // only a placeholder rather than the full constitutional text.
   const candidates = scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_METADATA_CANDIDATES)
-    .slice(0, MAX_FETCHES);
+  .sort((a, b) => b.score - a.score)
+  .slice(0, MAX_FETCHES);
 
   const fetched = await Promise.all(candidates.map(async (candidate) => {
     try {
