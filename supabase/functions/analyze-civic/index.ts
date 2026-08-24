@@ -395,9 +395,11 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
           : "";
         const mdaSubmissionBlock = [
           "WHERE TO SUBMIT THIS REPORT",
-          "The following MDA directory data is source-grounded. Use the primary institution identified by the legal analysis and verify the current submission channel before sending.",
           primaryMdaFields,
-          retrievedMdaExcerpt,
+          primaryMda
+            ? `Why relevant: ${primaryMda.mandate}`
+            : "Why relevant: The strongest MDA match was selected from the citizen's message.",
+          "Verification: Confirm the current submission channel on the institution's official website before sending.",
           `Directory source: ${MDA_SOURCE_LABEL}`,
         ].filter(Boolean).join("\n");
 
