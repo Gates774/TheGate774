@@ -9,7 +9,7 @@ const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 const MDA_CSV_PATH = "laws/mda/nigeria-mda-directory.csv";
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
-const MAX_MDA_RESULTS = 6;
+const MAX_MDA_RESULTS = 1;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
 const MAX_METADATA_CANDIDATES = 32;
@@ -614,7 +614,7 @@ export async function searchLegalSources(
   return fetched
     .filter((item): item is FetchedRow & { sectionExcerpt: string; provisions: string[] } => Boolean(item))
     .sort((a, b) => (b.textScore + b.score) - (a.textScore + a.score))
-    .filter((item) => item.textScore > 0 || item.score > 0)
+    .filter((item) => item.textScore >= 2)
     .slice(0, limit)
     .map(({ row, text, textScore: score, authorityTypes, sectionExcerpt, provisions }) => ({
       shortId: row.short_id,
