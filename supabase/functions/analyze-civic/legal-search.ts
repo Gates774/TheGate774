@@ -8,6 +8,7 @@ const LEGAL_REPO_NAME = "TheGate774";
 const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
+const MDA_SOURCE_LABEL = "Nigerian MDA directory";
 const MAX_MDA_RESULTS = 6;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
@@ -299,7 +300,7 @@ export function formatMdaSources(sources: MdaSource[]): string {
     `Category: ${source.category || "Not specified in directory"}`,
     `Website: ${source.website === "—" ? "Not listed" : source.website}`,
     `Address / Contact: ${source.addressContact || "Not listed"}`,
-    `Directory source: ${source.sourcePath}`,
+    `Directory source: ${MDA_SOURCE_LABEL}`,
     `Directory passage: ${source.excerpt}`,
   ].join("\n")).join("\n\n---\n\n");
 }

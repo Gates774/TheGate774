@@ -4,6 +4,7 @@ import { formatLegalSources, searchLegalSources } from "./legal-search.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
+const MDA_SOURCE_LABEL = "Nigerian MDA directory";
 const MDA_DIRECTORY_URL = `https://raw.githubusercontent.com/Gates774/TheGate774/main/${MDA_DIRECTORY_PATH}`;
 const MDA_REQUEST_TIMEOUT_MS = 7000;
 const MAX_MDA_CONTEXT_CHARS = 12000;
@@ -211,7 +212,7 @@ function relevantMdaExcerpt(directory: string, query: string): string {
 }
 
 function mdaContextBlock(excerpt: string): string {
-  return `========== RETRIEVED MDA DIRECTORY MATCHES ==========\nSource file: ${MDA_DIRECTORY_PATH}\nThe following are directory passages only. Use an institution, website, and address/contact only when it appears in these passages.\n\n${excerpt}\n========== END RETRIEVED MDA DIRECTORY MATCHES ==========`;
+  return `========== RETRIEVED MDA DIRECTORY MATCHES ==========\nSource file: ${MDA_SOURCE_LABEL}\nThe following are directory passages only. Use an institution, website, and address/contact only when it appears in these passages.\n\n${excerpt}\n========== END RETRIEVED MDA DIRECTORY MATCHES ==========`;
 }
 
 function appendSection(existing: string, heading: string, body: string): string {
@@ -344,14 +345,14 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
           "WHERE TO SUBMIT THIS REPORT",
           "The following MDA directory entries are the source candidates for the submission destination. Use the primary institution identified by the legal analysis and verify the current submission channel before sending.",
           retrievedMdaExcerpt,
-          `Directory source: ${MDA_DIRECTORY_PATH}`,
+          `Directory source: ${MDA_SOURCE_LABEL}`,
         ].join("\n");
 
         report.rationale = appendSection(report.rationale as string ?? "", "MDA SUBMISSION DESTINATION", mdaSubmissionBlock);
         report.mda = existingMda
           ? `${existingMda}\n\n${mdaSubmissionBlock}`
           : mdaSubmissionBlock;
-        if (!existingContact) report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_DIRECTORY_PATH}`;
+        if (!existingContact) report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
       }
 
       if (Array.isArray(report.action_plan) && retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
