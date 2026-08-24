@@ -83,10 +83,10 @@ RULES YOU MUST ALWAYS FOLLOW
 - For every complaint or scenario, decompose the facts and identify all materially relevant legal and institutional frameworks supported by the retrieved sources. Do not stop after finding one law or one authority.
 - For each relevant law or institutional framework, identify its exact title and year, exact section/provision when present, a short direct quotation when the wording is present, the legal meaning, consequence or remedy, and the authority responsible for the relevant action.
 - Never reconstruct or guess quotation wording. If exact wording is not present, provide only a clearly labelled paraphrase and state that the exact text should be verified from the official source.
-- Choose the primary responsible institution from the retrieved MDA directory candidates based on the citizen's facts, legal context, institution name, category, aliases, and mandate. Do not default to Nigeria Police Force. Use Nigeria Police Force only when the issue is an ordinary crime, police investigation, theft, robbery, assault, kidnapping, or emergency police matter. For police discipline or misconduct, distinguish Nigeria Police Force from Police Service Commission.
-- When a retrieved MDA directory entry is relevant, identify the institution exactly as written in that entry and include its website and address/contact field. Explain why it is relevant to the quoted law and the user's facts.
-- Set submission_destination.institution to the exact institution you selected from the retrieved candidates. Do not invent submission_destination.website or submission_destination.address_contact; the server will inject those values from the CSV record.
-- In the "mda" field, provide a compact submission block using this format: "Primary institution: ...; Why relevant: ...; Website: ...; Address / Contact: ...; Verification: Confirm the current submission channel on the institution's official website before sending." If more than one institution may be relevant, label the additional institution as "Other potentially relevant institution" and explain the condition.
+- Choose the primary responsible institution from the single retrieved MDA directory match based on the citizen's facts, institution name, category, aliases, and mandate. Do not default to Nigeria Police Force. Use Nigeria Police Force only when the issue is an ordinary crime, police investigation, theft, robbery, assault, kidnapping, or emergency police matter. For police discipline or misconduct, distinguish Nigeria Police Force from Police Service Commission.
+- When the retrieved MDA directory entry is relevant, identify that institution exactly as written in the entry and include its website and address/contact field. Do not introduce additional MDA institutions that are not the single retrieved match. Explain why it is relevant to the quoted law and the user's facts.
+- Set submission_destination.institution to the exact institution in the single retrieved MDA match. Do not invent submission_destination.website or submission_destination.address_contact; the server will inject those values from the CSV record.
+- In the "mda" field, provide a compact submission block using this format: "Primary institution: ...; Why relevant: ...; Website: ...; Address / Contact: ...; Verification: Confirm the current submission channel on the institution's official website before sending." Do not list additional MDA institutions.
 - In the "contact" field, provide the best supported website or contact route from the retrieved MDA directory or Civic Action Guide. Do not fabricate a phone number, email address, website, or address.
 - Include the matching MDA submission instruction in "action_plan" as a practical step, but distinguish the institution's role from the actual complaint submission channel when the source does not confirm the channel.
 - Put the complete source-grounded legal and MDA explanation into "rationale". Keep it readable in the report and preserve the following structure when applicable: law title and year; section/provision; quotation or labelled paraphrase; meaning; application; WHERE TO SUBMIT THIS REPORT; primary institution; website; address/contact; verification note.
@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
     let retrievedMdaSources: Awaited<ReturnType<typeof searchMdaDirectory>> = [];
     let mdaContext = "";
     try {
-      retrievedMdaSources = await searchMdaDirectory(content, { maxResults: 8 });
+      retrievedMdaSources = await searchMdaDirectory(content, { maxResults: 1 });
       if (retrievedMdaSources.length > 0) {
         // Use the structured parser so the Website and Address / Contact columns
         // cannot be lost or confused with legal rationale text.
@@ -370,6 +370,7 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         : report.responsible_authority && typeof report.responsible_authority === "object"
           ? String((report.responsible_authority as Record<string, unknown>).name ?? "")
           : "";
+      report.other_relevant_authorities = [];
 
       if (retrievedLegalPassages) {
         report.rationale = appendSection(
@@ -383,9 +384,8 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         const primaryMda = aiAuthorityName
           ? selectAiDesignatedMda(retrievedMdaSources, aiAuthorityName)
           : retrievedMdaSources[0];
-        const secondaryMdas = retrievedMdaSources
-          .filter((source) => source !== primaryMda && source.matchStrength === "strong")
-          .slice(0, 3);
+        // The MDA search intentionally returns one strongest match only.
+        const secondaryMdas: typeof retrievedMdaSources = [];
         const primaryMdaFields = primaryMda
           ? [
               `Primary institution: ${primaryMda.institution}`,
