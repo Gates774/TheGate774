@@ -3,13 +3,10 @@ import { CIVIC_GUIDE } from "./civic_guide.ts";
 import { formatLegalSources, searchLegalSources, searchMdaDirectory, formatMdaSources } from "./legal-search.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
-const MDA_DIRECTORY_URL = `https://raw.githubusercontent.com/Gates774/TheGate774/main/${MDA_DIRECTORY_PATH}`;
 const MDA_REQUEST_TIMEOUT_MS = 7000;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
-let mdaDirectoryPromise: Promise<string> | undefined;
 
 const SYSTEM_PROMPT = `You are the Nigerian Civic Actions Assistant. Your primary civic framework is the "Nigerian Citizen's Civic Action Guide" (provided below), which is grounded in the 1999 Constitution of the Federal Republic of Nigeria (as amended). You may also use the retrieved legal sources and MDA directory entries supplied with the user's message as supplemental context. You must never invent agencies, laws, procedures, contacts, websites, addresses, or submission channels that are not supported by the Civic Action Guide, retrieved legal sources, or retrieved MDA directory entries.
 
@@ -116,15 +113,6 @@ async function fetchText(url: string): Promise<string> {
   }
 }
 
-async function loadMdaDirectory(): Promise<string> {
-  if (!mdaDirectoryPromise) {
-    mdaDirectoryPromise = fetchText(MDA_DIRECTORY_URL).catch((error) => {
-      mdaDirectoryPromise = undefined;
-      throw error;
-    });
-  }
-  return mdaDirectoryPromise;
-}
 
 function mdaSearchTerms(query: string): string[] {
   const value = normalize(query);
@@ -254,9 +242,6 @@ Deno.serve(async (req) => {
         // Use the structured parser so the Website and Address / Contact columns
         // cannot be lost or confused with legal rationale text.
         retrievedMdaExcerpt = formatMdaSources(retrievedMdaSources);
-      } else {
-        const directory = await loadMdaDirectory();
-        retrievedMdaExcerpt = relevantMdaExcerpt(directory, content);
       }
       mdaContext = `\n\n${mdaContextBlock(retrievedMdaExcerpt)}`;
     } catch (error) {
