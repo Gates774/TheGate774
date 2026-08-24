@@ -579,15 +579,23 @@ function formatToday() {
 }
 
 /** Extract a labelled segment (e.g. "Website: ...") from the compact MDA submission block returned in analysis.mda. Returns undefined when the label is absent. */
-function extractMdaField(mda: string | undefined, labels: string[]): string | undefined {
-  if (!mda) return undefined;
-  for (const part of mda.split(/;\s*/)) {
-    for (const label of labels) {
-      const match = part.match(new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[:\\u2014-]\\s*(.+)$`, "i"));
-      if (match) return match[1].trim();
-    }
-  }
-  return undefined;
+function extractMdaField(value: string | undefined, labels: string[]): string | undefined {
+  if (!value) return undefined;
+  const escapedLabels = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const labelPattern = escapedLabels.join("|");
+  const match = value.match(new RegExp(`(?:^|[;\\n])\\s*(?:${labelPattern})\\s*[:\\u2014-]\\s*([^;\\n]+)`, "i"));
+  return match?.[1]?.trim() || undefined;
+}
+
+function extractMdaAddressContact(analysis: ComplaintAnalysis): string | undefined {
+  const labelled = extractMdaField(analysis.mda, ["Address / Contact", "Address", "Contact"])
+    ?? extractMdaField(analysis.contact, ["Address / Contact", "Address", "Contact"])
+    ?? extractMdaField(analysis.rationale, ["Address / Contact", "Address", "Contact"]);
+  if (labelled) return labelled;
+
+  const combined = [analysis.mda, analysis.contact, analysis.rationale].filter(Boolean).join("\n");
+  const addressLine = combined.match(/(?:HQ|Headquarters|Office|Plot|Block|House|Street|Road|Avenue|Crescent|Complex|Secretariat|PMB|Abuja|Lagos)[^\n;]{5,}/i);
+  return addressLine?.[0]?.trim() || undefined;
 }
 
 export function ComplaintReportCard({
@@ -732,7 +740,7 @@ export function ComplaintReportCard({
               {(analysis.mda || analysis.contact) && (() => {
                 const institution = extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
                 const website = extractMdaField(analysis.mda, ["Website"]) ?? analysis.contact;
-                const address = extractMdaField(analysis.mda, ["Address / Contact", "Address", "Contact"]);
+                const address = extractMdaAddressContact(analysis);
                 return (
                   <dl className="space-y-3">
                     {institution && (
