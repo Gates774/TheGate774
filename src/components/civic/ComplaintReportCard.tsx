@@ -578,6 +578,18 @@ function formatToday() {
   });
 }
 
+/** Extract a labelled segment (e.g. "Website: ...") from the compact MDA submission block returned in analysis.mda. Returns undefined when the label is absent. */
+function extractMdaField(mda: string | undefined, labels: string[]): string | undefined {
+  if (!mda) return undefined;
+  for (const part of mda.split(/;\s*/)) {
+    for (const label of labels) {
+      const match = part.match(new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[:\\u2014-]\\s*(.+)$`, "i"));
+      if (match) return match[1].trim();
+    }
+  }
+  return undefined;
+}
+
 export function ComplaintReportCard({
   analysis,
   eyebrow = "Civic Action Brief",
