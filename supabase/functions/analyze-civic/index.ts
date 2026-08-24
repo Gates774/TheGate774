@@ -1,4 +1,8 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 import { CIVIC_GUIDE } from "./civic_guide.ts";
 import { formatLegalSources, searchLegalSources, searchMdaDirectory, formatMdaSources } from "./legal-search.ts";
 
@@ -297,9 +301,9 @@ Citizen message:
 
 Run all three steps (Classify -> Identify Tier -> Produce Actionable Report). First identify all materially relevant legal provisions in the retrieved law sources. Then identify the responsible institution in the retrieved MDA directory passages. For each relevant law, provide the exact title and year, section/provision, a short direct source quotation when present or a clearly labelled paraphrase when not, its plain-English meaning, consequence/remedy, and why it applies. Immediately connect the law to the submission destination.
 
-For any relevant MDA, populate the existing "mda" field with the institution name, website, address/contact, why it is relevant, and a verification note. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. If multiple MDAs may apply, identify a primary institution and clearly label other potentially relevant institutions with the condition that makes them relevant.
+For the single retrieved MDA, populate the existing "mda" field with its institution name, website, address/contact, why it is relevant, and a verification note. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. Do not list or introduce any additional MDA.
 
-Use the Civic Action Guide for civic routing and the retrieved law and MDA sources for specific legal foundations and submission destinations. In constitutional_basis, include a source-grounded quotation only if actual constitutional wording is present; otherwise state that the constitutional quotation is unavailable. Do not invent or reconstruct wording. Put all legal and MDA foundations into the existing fields without adding JSON keys. Substitute residence details where applicable. Reply with STRICT JSON only, matching the schema in the system prompt.`;
+Use the Civic Action Guide for civic routing and the retrieved law and MDA source for specific legal foundations and the single submission destination. Do not list, recommend, or introduce any additional MDA. In constitutional_basis, include a source-grounded quotation only if actual constitutional wording is present; otherwise state that the constitutional quotation is unavailable. Do not invent or reconstruct wording. Put all legal and MDA foundations into the existing fields without adding JSON keys. Substitute residence details where applicable. Reply with STRICT JSON only, matching the schema in the system prompt.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
