@@ -202,7 +202,7 @@ function parseMdaCsv(csv: string): MdaSource[] {
       mandate: profile.mandate,
       aliases: profile.aliases,
       issueTerms: profile.issueTerms,
-      jurisdiction: /state/i.test(row.category ?? "") ? "state" : "federal",
+      jurisdiction: /state/i.test(row.category ?? "") ? "state" as const : "federal" as const,
       sourcePath: row.source_file?.trim() || MDA_CSV_PATH,
       source_file: row.source_file?.trim() || MDA_CSV_PATH,
       matchStrength: "moderate" as const,
