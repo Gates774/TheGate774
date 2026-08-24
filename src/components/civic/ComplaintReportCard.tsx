@@ -31,7 +31,13 @@ export interface ComplaintAnalysis {
     why_relevant?: string;
     verification_note?: string;
   };
-  mda_status?: "matched" | "no_match" | "unavailable";
+  other_relevant_authorities?: Array<{
+    institution?: string;
+    website?: string | null;
+    address_contact?: string | null;
+    condition?: string;
+    verification_note?: string;
+  }>;
   officer?: string;
   constitutional_basis?: string;
   action_plan?: string[];
@@ -280,23 +286,27 @@ function parseMdaRows(directory: string): Array<{ institution: string; website: 
     if (heading && !/^\d+\.$/.test(heading[2].trim())) category = heading[2].trim();
     const match = line.match(rowPattern);
     if (!match) continue;
-    const institution = match[1].replace(/\s+/g, " ").trim();
+    let institution = match[1].replace(/\s+/g, " ").trim();
     const website = match[2].trim();
-    const addressParts = [match[3].replace(/\s+/g, " ").trim()];
+    const addressContact = match[3].replace(/\s+/g, " ").trim();
 
-    // Preserve wrapped address/contact lines until the next row or heading.
+    // The PDF conversion wraps long institution names onto the next line.
+    // Join those continuation lines so the report receives the complete name.
     let continuationIndex = index + 1;
     while (continuationIndex < lines.length) {
       const continuation = lines[continuationIndex].trim();
-      if (!continuation) break;
+      if (!continuation || /^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact)/i.test(continuation)) break;
       if (/^\d{1,2}\.\s+/.test(continuation) || rowPattern.test(lines[continuationIndex])) break;
-      if (/^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact|Contents)$/i.test(continuation)) break;
-      addressParts.push(continuation.replace(/\s+/g, " "));
-      continuationIndex += 1;
+      if (/^(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))(?:\s+(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))){0,8}$/.test(continuation)) {
+        institution = `${institution} ${continuation}`.replace(/\s+/g, " ").trim();
+        continuationIndex += 1;
+        continue;
+      }
+      break;
     }
 
     if (!institution || institution.toLowerCase() === "institution") continue;
-    rows.push({ institution, website, addressContact: addressParts.filter(Boolean).join(" ").trim(), category, lineIndex: index });
+    rows.push({ institution, website, addressContact, category, lineIndex: index });
   }
 
   return rows;
@@ -757,10 +767,10 @@ export function ComplaintReportCard({
           </Section>
         )}
 
-        {(analysis.mda || analysis.contact || analysis.rationale) && (
+        {(analysis.mda || analysis.contact || analysis.submission_destination || analysis.other_relevant_authorities?.length || analysis.rationale) && (
           <Section label="03 — Where to submit this report" icon={Building2}>
             <div className="space-y-4">
-              {(analysis.mda || analysis.contact || analysis.submission_destination) && (() => {
+              {(analysis.mda || analysis.contact) && (() => {
                 const destination = analysis.submission_destination;
                 const institution = destination?.institution
                   ?? extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
@@ -780,18 +790,7 @@ export function ComplaintReportCard({
                     {website && (
                       <div>
                         <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Website</dt>
-                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">
-                        {website ? (
-                          <a
-                            href={website.startsWith("http") ? website : `https://${website}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="underline underline-offset-2"
-                          >
-                            {website}
-                          </a>
-                        ) : "Not listed"}
-                      </dd>
+                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">{website}</dd>
                       </div>
                     )}
                     <div>
@@ -803,16 +802,33 @@ export function ComplaintReportCard({
                   </dl>
                 );
               })()}
+              {analysis.other_relevant_authorities && analysis.other_relevant_authorities.length > 0 && (
+                <div className="space-y-3 border-t border-foreground/10 pt-4">
+                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold">Other potentially relevant authorities</p>
+                  {analysis.other_relevant_authorities.map((authority, index) => (
+                    <div key={`${authority.institution ?? "authority"}-${index}`} className="rounded-sm border border-foreground/10 p-3">
+                      <p className="font-semibold text-[13px] sm:text-[14px]">{authority.institution ?? "Not provided"}</p>
+                      <p className="text-[13px] leading-[1.7] break-words">
+                        Website: {authority.website ?? "Not listed"}
+                      </p>
+                      <p className="text-[13px] leading-[1.7] break-words">
+                        Address / Contact: {authority.address_contact ?? "Not listed"}
+                      </p>
+                      {authority.condition && <p className="text-[12px] leading-[1.6] text-foreground/70">{authority.condition}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
               {analysis.mda && (
                 <div>
                   <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Full MDA directory entry</p>
                   <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.mda}</p>
                 </div>
               )}
-              {!analysis.mda && !analysis.contact && !analysis.submission_destination && analysis.rationale && (
+              {!analysis.mda && !analysis.contact && analysis.rationale && (
                 <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.rationale}</p>
               )}
-              {(analysis.mda || analysis.contact || analysis.submission_destination) && (
+              {(analysis.mda || analysis.contact) && (
                 <p className="text-[12px] sm:text-[13px] leading-[1.6] text-foreground/60">
                   Directory source: Nigerian MDA directory.
                 </p>
