@@ -770,7 +770,7 @@ export function ComplaintReportCard({
         {(analysis.mda || analysis.contact || analysis.submission_destination || analysis.other_relevant_authorities?.length || analysis.rationale) && (
           <Section label="03 — Where to submit this report" icon={Building2}>
             <div className="space-y-4">
-              {(analysis.mda || analysis.contact || analysis.submission_destination) && (() => {
+              {(() => {
                 const destination = analysis.submission_destination;
                 const institution = destination?.institution
                   ?? extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
@@ -783,16 +783,16 @@ export function ComplaintReportCard({
                   <dl className="space-y-3">
                     <div>
                         <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Institution</dt>
-                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{institution ?? "—"}</dd>
+                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{institution || "—"}</dd>
                     </div>
                     <div>
                         <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Website</dt>
-                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">{website ?? "—"}</dd>
+                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">{website || "—"}</dd>
                     </div>
                     <div>
                       <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Address / Contact</dt>
                       <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">
-                        {address ?? "—"}
+                        {address || "—"}
                       </dd>
                     </div>
                   </dl>
@@ -803,12 +803,12 @@ export function ComplaintReportCard({
                   <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold">Other potentially relevant authorities</p>
                   {analysis.other_relevant_authorities.map((authority, index) => (
                     <div key={`${authority.institution ?? "authority"}-${index}`} className="rounded-sm border border-foreground/10 p-3">
-                      <p className="font-semibold text-[13px] sm:text-[14px]">{authority.institution ?? "Not provided"}</p>
+                      <p className="font-semibold text-[13px] sm:text-[14px]">{authority.institution || "—"}</p>
                       <p className="text-[13px] leading-[1.7] break-words">
-                        Website: {authority.website ?? "Not listed"}
+                        Website: {authority.website || "—"}
                       </p>
                       <p className="text-[13px] leading-[1.7] break-words">
-                        Address / Contact: {authority.address_contact ?? "Not listed"}
+                        Address / Contact: {authority.address_contact || "—"}
                       </p>
                       {authority.condition && <p className="text-[12px] leading-[1.6] text-foreground/70">{authority.condition}</p>}
                     </div>
