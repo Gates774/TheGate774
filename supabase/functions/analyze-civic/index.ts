@@ -274,9 +274,7 @@ Deno.serve(async (req) => {
     let retrievedMdaSources: Awaited<ReturnType<typeof searchMdaDirectory>> = [];
     let mdaContext = "";
     try {
-      retrievedMdaSources = await searchMdaDirectory(`${content}\n${retrievedLegalPassages}`, { maxResults: 8 });
-      console.log("[analyze-civic] searchMdaDirectory returned", retrievedMdaSources.length, "candidates:",
-        retrievedMdaSources.slice(0, 3).map((s) => s.institution));
+      retrievedMdaSources = await searchMdaDirectory(content, { maxResults: 8 });
       if (retrievedMdaSources.length > 0) {
         // Use the structured parser so the Website and Address / Contact columns
         // cannot be lost or confused with legal rationale text.
@@ -367,24 +365,11 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       const aiDestination = report.submission_destination && typeof report.submission_destination === "object"
         ? report.submission_destination as Record<string, unknown>
         : undefined;
-      const aiDestinationInstitution = typeof aiDestination?.institution === "string" ? aiDestination.institution.trim() : "";
-      const aiResponsibleAuthorityName = report.responsible_authority && typeof report.responsible_authority === "object"
-        ? String((report.responsible_authority as Record<string, unknown>).name ?? "").trim()
-        : "";
-      // Bug fix: the AI's schema requires submission_destination.institution as a
-      // string, so it often comes back as "" when no MDA candidates were retrieved.
-      // The previous check only tested `typeof === "string"`, which is true for ""
-      // too, so it never fell through to responsible_authority.name — leaving
-      // aiAuthorityName empty and skipping the fallback below entirely.
-      const aiAuthorityName = aiDestinationInstitution || aiResponsibleAuthorityName;
-
-      console.log("[analyze-civic] MDA diagnostics", {
-        retrievedMdaSourceCount: retrievedMdaSources.length,
-        retrievedMdaExcerptEmpty: !retrievedMdaExcerpt,
-        aiDestinationInstitution,
-        aiResponsibleAuthorityName,
-        aiAuthorityName,
-      });
+      const aiAuthorityName = typeof aiDestination?.institution === "string"
+        ? aiDestination.institution
+        : report.responsible_authority && typeof report.responsible_authority === "object"
+          ? String((report.responsible_authority as Record<string, unknown>).name ?? "")
+          : "";
 
       if (retrievedLegalPassages) {
         report.rationale = appendSection(
@@ -398,7 +383,9 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         const primaryMda = aiAuthorityName
           ? selectAiDesignatedMda(retrievedMdaSources, aiAuthorityName)
           : retrievedMdaSources[0];
-        const secondaryMdas = retrievedMdaSources.filter((source) => source !== primaryMda).slice(0, 3);
+        const secondaryMdas = retrievedMdaSources
+          .filter((source) => source !== primaryMda && source.matchStrength === "strong")
+          .slice(0, 3);
         const primaryMdaFields = primaryMda
           ? [
               `Primary institution: ${primaryMda.institution}`,
@@ -435,32 +422,34 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         } else if (!existingContact) {
           report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
         }
-      } else if (aiAuthorityName && !report.submission_destination) {
-        // The GitHub-hosted MDA directory returned no candidates for this request
-        // (fetch failure/timeout after retries, or genuinely no scoring match).
-        // Previously this left submission_destination unset entirely, so the
-        // Institution/Website/Address fields rendered as "—" even though the AI
-        // (via the Civic Action Guide) already knew the right institution.
-        // Website/address are intentionally left null here rather than invented.
-        const fallbackNote = "The live MDA directory lookup did not return a match for this request, so only the institution name is shown here. Search for this institution's official website and contact details directly, and verify before submitting.";
+      } else if (aiAuthorityName) {
+        const aiWhyRelevant = typeof aiDestination?.why_relevant === "string"
+          ? aiDestination.why_relevant
+          : "The AI identified this institution as the most relevant authority for the reported facts.";
+        const fallbackMdaBlock = [
+          "WHERE TO SUBMIT THIS REPORT",
+          `Primary institution: ${aiAuthorityName}`,
+          "Website: —",
+          "Address / Contact: —",
+          aiWhyRelevant,
+          "The GitHub MDA directory could not be retrieved. Confirm the current official submission channel before sending.",
+        ].join("\n");
+
         report.submission_destination = {
           institution: aiAuthorityName,
           website: null,
           address_contact: null,
-          why_relevant: "Identified from the Civic Action Guide and the citizen's facts; not cross-checked against the MDA directory for this request.",
-          verification_note: fallbackNote,
+          why_relevant: aiWhyRelevant,
+          verification_note: "The GitHub MDA directory was unavailable. Confirm the current submission channel on the institution's official website before sending.",
         };
-        report.mda = appendSection(
-          existingMda,
-          "WHERE TO SUBMIT THIS REPORT",
-          `Primary institution: ${aiAuthorityName}\n${fallbackNote}`,
-        );
+        report.mda = fallbackMdaBlock;
+        report.rationale = appendSection(existingRationale, "MDA SUBMISSION DESTINATION", fallbackMdaBlock);
         if (!existingContact) {
-          report.contact = `Directory lookup unavailable — verify ${aiAuthorityName}'s official contact channel directly.`;
+          report.contact = "Official contact details unavailable; verify the current submission channel on the selected institution's official website.";
         }
       }
 
-      if (Array.isArray(report.action_plan) && report.submission_destination) {
+      if (Array.isArray(report.action_plan) && retrievedMdaExcerpt && !retrievedMdaExcerpt.startsWith("No matching")) {
         const steps = report.action_plan.map((step) => String(step));
         if (!steps.some((step) => /mda|website|institution|submit|complaint channel|regulatory authority/i.test(step))) {
           steps.push("Confirm the primary institution's current official submission channel using the website and address/contact shown in the MDA directory block before sending this report.");
