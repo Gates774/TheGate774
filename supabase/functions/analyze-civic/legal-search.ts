@@ -34,8 +34,8 @@ export type LegalSource = {
 
 export type MdaSource = {
   institution: string;
-  website: string;
-  addressContact: string;
+  website: string | null;
+  addressContact: string | null;
   category: string;
   sourcePath: string;
   matchStrength: "strong" | "moderate";
@@ -221,7 +221,7 @@ function parseMdaRows(directory: string): Array<{ institution: string; website: 
   const lines = directory.replace(/\r/g, "").split("\n");
   const rows: Array<{ institution: string; website: string; addressContact: string; category: string; lineIndex: number }> = [];
   let category = "";
-  const rowPattern = /^\s*(.*?)\s{2,}((?:https?:\/\/)?[A-Za-z0-9.-]+\.(?:gov\.ng|org|com|net|ng)|—)\s{2,}(.*?)\s*$/;
+  const rowPattern = /^\s*(.*?)\s{2,}((?:https?:\/\/)?(?:www\.)?[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+(?:\/[^\s]*)?|—)\s{2,}(.*?)\s*$/;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index].trimEnd();
@@ -230,26 +230,33 @@ function parseMdaRows(directory: string): Array<{ institution: string; website: 
     const match = line.match(rowPattern);
     if (!match) continue;
     let institution = match[1].replace(/\s+/g, " ").trim();
-    const website = match[2].trim();
-    const addressContact = match[3].replace(/\s+/g, " ").trim();
+    const website = match[2].trim() === "—" ? "—" : match[2].trim();
+    const addressParts = [match[3].replace(/\s+/g, " ").trim()];
 
-    // The PDF conversion wraps long institution names onto the next line.
-    // Join those continuation lines so the report receives the complete name.
+    // The PDF conversion wraps institution names and address/contact values.
+    // Preserve both until the next row or category heading.
     let continuationIndex = index + 1;
     while (continuationIndex < lines.length) {
       const continuation = lines[continuationIndex].trim();
-      if (!continuation || /^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact)/i.test(continuation)) break;
+      if (!continuation) break;
       if (/^\d{1,2}\.\s+/.test(continuation) || rowPattern.test(lines[continuationIndex])) break;
-      if (/^(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))(?:\s+(?:(?:[A-Z][A-Za-z&'().-]*)|(?:\([^)]+\)))){0,8}$/.test(continuation)) {
-        institution = `${institution} ${continuation}`.replace(/\s+/g, " ").trim();
-        continuationIndex += 1;
-        continue;
-      }
-      break;
+      if (/^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact|Contents)$/i.test(continuation)) break;
+
+      // Uppercase/title-case continuation lines from the PDF may belong to either
+      // the institution name or the address/contact cell. Preserve the text rather
+      // than trying to guess which column it came from.
+      addressParts.push(continuation.replace(/\s+/g, " "));
+      continuationIndex += 1;
     }
 
     if (!institution || institution.toLowerCase() === "institution") continue;
-    rows.push({ institution, website, addressContact, category, lineIndex: index });
+    rows.push({
+      institution,
+      website,
+      addressContact: addressParts.filter(Boolean).join(" ").trim(),
+      category,
+      lineIndex: index,
+    });
   }
 
   return rows;
@@ -283,8 +290,8 @@ export async function searchMdaDirectory(
     const excerpt = lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 4)).join("\n").trim();
     return {
       institution: row.institution,
-      website: row.website,
-      addressContact: row.addressContact,
+      website: row.website === "—" ? null : row.website,
+      addressContact: row.addressContact || null,
       category: row.category,
       sourcePath: MDA_DIRECTORY_PATH,
       matchStrength: score >= 5 ? "strong" : "moderate",
