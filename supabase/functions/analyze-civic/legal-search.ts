@@ -43,6 +43,7 @@ export type MdaSource = {
   issueTerms: string[];
   jurisdiction: "federal" | "state" | "local" | "national";
   sourcePath: string;
+  source_file: string;
   matchStrength: "strong" | "moderate";
   excerpt: string;
 };
@@ -191,6 +192,7 @@ function parseMdaCsv(csv: string): MdaSource[] {
       issueTerms: profile.issueTerms,
       jurisdiction: /state/i.test(row.category ?? "") ? "state" : "federal",
       sourcePath: row.source_file?.trim() || MDA_CSV_PATH,
+      source_file: row.source_file?.trim() || MDA_CSV_PATH,
       matchStrength: "moderate" as const,
       excerpt: [row.institution, row.website, row.address_contact, row.category].filter(Boolean).join(" | "),
     };
@@ -354,16 +356,24 @@ function authorityProfile(institution: string, category: string): { mandate: str
 
 function authorityScore(source: MdaSource, query: string): number {
   const value = normalize(query);
+  const tokens = new Set(value.split(" ").filter((term) => term.length >= 3));
   const terms = [...source.aliases, ...source.issueTerms, source.institution, source.category]
     .map(normalize)
     .filter((term) => term.length >= 3);
   let score = 0;
   for (const term of terms) {
-    if (term.includes(" ") ? value.includes(term) : value.split(" ").includes(term)) {
-      score += source.issueTerms.includes(term) ? 12 : 8;
-    }
+    const matches = term.includes(" ") ? value.includes(term) : tokens.has(term);
+    if (matches) score += source.issueTerms.some((issueTerm) => normalize(issueTerm) === term) ? 12 : 8;
   }
   if (source.mandate && source.issueTerms.some((term) => value.includes(normalize(term)))) score += 10;
+
+  const isPolice = /nigeria police force|\bnpf\b/i.test(source.institution);
+  const isPoliceOversight = /police service commission|\bpsc\b/i.test(source.institution);
+  const isOrdinaryCrime = /\b(robbery|theft|stealing|assault|kidnapping|crime|criminal|emergency|victim|investigation)\b/.test(value);
+  const isPoliceMisconduct = /(police misconduct|police brutality|abuse by police|complaint against (a )?police|discipline.*police|police.*discipline|unlawful conduct.*officer)/.test(value);
+  if (isOrdinaryCrime && !isPoliceMisconduct && isPolice) score += 100;
+  if (isPoliceMisconduct && isPoliceOversight) score += 120;
+  if (isPoliceMisconduct && isPolice) score += 15;
   return score;
 }
 
@@ -387,21 +397,10 @@ export async function searchMdaDirectory(
   try {
     sources = parseMdaCsv(await loadMdaCsv());
   } catch (error) {
-    console.warn("MDA CSV unavailable; falling back to text directory", error);
-    const directory = await loadMdaDirectory();
-    const lines = directory.replace(/\r/g, "").split("\n");
-    const rows = parseMdaRows(directory);
-    sources = rows.map((row) => {
-      const profile = authorityProfile(row.institution, row.category);
-      return {
-        institution: row.institution, website: row.website === "—" ? null : row.website,
-        addressContact: row.addressContact || null, category: row.category,
-        mandate: profile.mandate, aliases: profile.aliases, issueTerms: profile.issueTerms,
-        jurisdiction: /state/i.test(row.category) ? "state" : "federal",
-        sourcePath: MDA_DIRECTORY_PATH, matchStrength: "moderate",
-        excerpt: lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 5)).join("\n").trim().slice(0, 2400),
-      };
-    });
+    // The CSV on GitHub main is the authoritative machine-readable source.
+    // Do not silently substitute the legacy fixed-width TXT file.
+    console.warn("MDA CSV unavailable; no structured MDA candidates returned", error);
+    return [];
   }
 
   const queryText = normalize(query);
@@ -414,9 +413,9 @@ export async function searchMdaDirectory(
       return { source, score };
     })
     .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || a.source.institution.localeCompare(b.source.institution))
     .slice(0, options.maxResults ?? MAX_MDA_RESULTS)
-    .map(({ source, score }) => ({ ...source, matchStrength: score >= 8 ? "strong" : "moderate" as const }));
+    .map(({ source, score }) => ({ ...source, matchStrength: score >= 20 ? "strong" : "moderate" as const }));
 }
 
 export function formatMdaSources(sources: MdaSource[]): string {
