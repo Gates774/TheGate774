@@ -9,7 +9,7 @@ const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 const MDA_CSV_PATH = "laws/mda/nigeria-mda-directory.csv";
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
-const MAX_MDA_RESULTS = 6;
+const MAX_MDA_RESULTS = 1;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
 const MAX_METADATA_CANDIDATES = 32;
@@ -418,7 +418,9 @@ export async function searchMdaDirectory(
     })
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || a.source.institution.localeCompare(b.source.institution))
-    .slice(0, options.maxResults ?? MAX_MDA_RESULTS)
+    // Only the single strongest MDA is passed downstream. Sending several
+    // candidates lets weak matches dilute the primary authority decision.
+    .slice(0, 1)
     .map(({ source, score }) => ({ ...source, matchStrength: score >= 20 ? "strong" : "moderate" as const }));
 }
 
