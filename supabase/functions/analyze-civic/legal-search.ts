@@ -425,8 +425,9 @@ export async function searchMdaDirectory(
 }
 
 export function formatMdaSources(sources: MdaSource[]): string {
-  if (sources.length === 0) return "";
-  return sources.map((source, index) => [
+  const strongestSource = sources[0];
+  if (!strongestSource) return "";
+  return [strongestSource].map((source, index) => [
     `[MDA source ${index + 1} — ${source.matchStrength} match] ${source.institution}`,
     `Category: ${source.category || "Not specified in directory"}`,
     `Mandate: ${source.mandate}`,
