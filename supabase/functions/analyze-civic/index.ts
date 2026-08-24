@@ -323,9 +323,9 @@ Residence LGA: ${residenceLga ?? "unknown"}
 Citizen message:
 """${content.slice(0, 4000)}"""
 
-Run all three steps (Classify -> Identify Tier -> Produce Actionable Report). First identify the materially relevant legal provisions contained in the single retrieved legal source, if one was retrieved. Then identify the responsible institution in the retrieved MDA directory passages. For each relevant law, provide the exact title and year, section/provision, a short direct source quotation when present or a clearly labelled paraphrase when not, its plain-English meaning, consequence/remedy, and why it applies. Immediately connect the law to the submission destination.
+Run all three steps (Classify -> Identify Tier -> Produce Actionable Report). First identify only the materially relevant legal provisions contained in the single retrieved legal source, if one was retrieved. Do not include provisions that do not materially apply to the citizen's facts. Then identify the responsible institution in the retrieved MDA directory passages. For each relevant law, provide the exact title and year, section/provision, a short direct source quotation when present or a clearly labelled paraphrase when not, its plain-English meaning, consequence/remedy, and why it applies. Keep submission-destination details separate from the legal rationale.
 
-For the single retrieved MDA, populate the existing "mda" field with the institution name, website, address/contact, why it is relevant, and a verification note. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Put a readable source-grounded law-and-MDA block into "rationale". Use only the retrieved directory fields and never invent missing contact details. Do not identify, recommend, infer, or list additional institutions.
+For the single retrieved MDA, populate the existing "mda" field with only the supported primary institution name, website, and address/contact. Populate "submission_destination" with the supported institution details and why it is relevant. Populate "contact" with the best supported official website or contact route. Add a practical MDA submission step to "action_plan". Keep all submission-destination details out of "rationale". Use only the retrieved directory fields and never invent missing contact details. Do not identify, recommend, infer, or list additional institutions.
 
 Use the Civic Action Guide for civic routing and the retrieved law and MDA sources for specific legal foundations and submission destinations. In constitutional_basis, include a source-grounded quotation only if actual constitutional wording is present; otherwise state that the constitutional quotation is unavailable. Do not invent or reconstruct wording. Put all legal and MDA foundations into the existing fields without adding JSON keys. Substitute residence details where applicable. Reply with STRICT JSON only, matching the schema in the system prompt.`;
 
@@ -419,7 +419,6 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         const primaryMda = aiAuthorityName
           ? selectAiDesignatedMda(retrievedMdaSources, aiAuthorityName)
           : retrievedMdaSources[0];
-        const secondaryMdas = [];
         const primaryMdaFields = primaryMda
           ? [
               `Primary institution: ${primaryMda.institution}`,
@@ -427,16 +426,9 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
               `Address / Contact: ${primaryMda.addressContact || "Not listed"}`,
             ].join("\n")
           : "";
-        const mdaSubmissionBlock = [
-          "WHERE TO SUBMIT THIS REPORT",
-          "The following MDA directory data is source-grounded. Use the primary institution identified by the legal analysis and verify the current submission channel before sending.",
-          primaryMdaFields,
-          retrievedMdaExcerpt,
-          `Directory source: ${MDA_SOURCE_LABEL}`,
-        ].filter(Boolean).join("\n");
-
-        report.rationale = appendSection(existingRationale, "MDA SUBMISSION DESTINATION", mdaSubmissionBlock);
-        report.mda = mdaSubmissionBlock;
+        // Keep the legal rationale focused on retrieved legal provisions. The
+        // structured destination below is the single source for submission data.
+        report.mda = primaryMdaFields;
         if (retrievedMdaSources.length > 0 && primaryMda) {
           report.submission_destination = {
             institution: primaryMda.institution,
@@ -445,13 +437,8 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
             why_relevant: `${primaryMda.mandate} This authority was selected because its mandate and the retrieved legal context match the citizen's issue.`,
             verification_note: "Confirm the current submission channel on the institution's official website before sending.",
           };
-          report.other_relevant_authorities = secondaryMdas.map((source) => ({
-            institution: source.institution,
-            website: source.website,
-            address_contact: source.addressContact,
-            condition: `Consider this authority when the facts specifically concern ${source.mandate.toLowerCase()}`,
-            verification_note: "Confirm the current submission channel on the institution's official website before sending.",
-          }));
+          // The report intentionally presents only the primary destination.
+          report.other_relevant_authorities = [];
           report.contact = primaryMda.website ?? primaryMda.addressContact ?? existingContact;
         } else if (!existingContact) {
           report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
@@ -465,11 +452,7 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
           why_relevant: "Identified from the Civic Action Guide and the citizen's facts; not cross-checked against the MDA directory for this request.",
           verification_note: fallbackNote,
         };
-        report.mda = appendSection(
-          existingMda,
-          "WHERE TO SUBMIT THIS REPORT",
-          `Primary institution: ${aiAuthorityName}\n${fallbackNote}`,
-        );
+        report.mda = existingMda || `Primary institution: ${aiAuthorityName}`;
         if (!existingContact) {
           report.contact = `Directory lookup unavailable — verify ${aiAuthorityName}'s official contact channel directly.`;
         }
