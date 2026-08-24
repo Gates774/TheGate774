@@ -1,6 +1,17 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { CIVIC_GUIDE } from "./civic_guide.ts";
 import { formatLegalSources, searchLegalSources, searchMdaDirectory, formatMdaSources } from "./legal-search.ts";
+
+// Defined locally — this file previously imported `corsHeaders` from
+// "npm:@supabase/supabase-js@2/cors", but that subpath is not a real,
+// resolvable export of supabase-js. Since this project no longer runs on
+// Supabase infrastructure, that import was failing at module load time,
+// which crashes the whole function before any request is handled (a blank
+// screen with no useful stack trace — line 0, col 0).
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
@@ -386,11 +397,6 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
       const aiResponsibleAuthorityName = report.responsible_authority && typeof report.responsible_authority === "object"
         ? String((report.responsible_authority as Record<string, unknown>).name ?? "").trim()
         : "";
-      // Bug fix: the AI's schema requires submission_destination.institution as a
-      // string, so it often comes back as "" when no MDA candidates were retrieved.
-      // The previous check only tested `typeof === "string"`, which is true for ""
-      // too, so it never fell through to responsible_authority.name — leaving
-      // aiAuthorityName empty and skipping the fallback below entirely.
       const aiAuthorityName = aiDestinationInstitution || aiResponsibleAuthorityName;
 
       console.log("[analyze-civic] MDA diagnostics", {
@@ -451,12 +457,6 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
           report.contact = `See the MDA directory entries in the report; verify the current official submission channel. Source: ${MDA_SOURCE_LABEL}`;
         }
       } else if (aiAuthorityName && !report.submission_destination) {
-        // The GitHub-hosted MDA directory returned no candidates for this request
-        // (fetch failure/timeout after retries, or genuinely no scoring match).
-        // Previously this left submission_destination unset entirely, so the
-        // Institution/Website/Address fields rendered as "—" even though the AI
-        // (via the Civic Action Guide) already knew the right institution.
-        // Website/address are intentionally left null here rather than invented.
         const fallbackNote = "The live MDA directory lookup did not return a match for this request, so only the institution name is shown here. Search for this institution's official website and contact details directly, and verify before submitting.";
         report.submission_destination = {
           institution: aiAuthorityName,
