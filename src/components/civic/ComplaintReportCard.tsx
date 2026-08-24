@@ -71,7 +71,7 @@ const MAX_MDA_CONTEXT_CHARS = 12000;
 
 const MAX_METADATA_CANDIDATES = 32;
 const MAX_FETCHES = 16;
-const MAX_RESULTS = 8;
+const MAX_RESULTS = 1;
 const MAX_EXCERPT_CHARS = 7000;
 const MAX_EXCERPT_WINDOWS = 3;
 const WINDOW_CHARS = 2200;
@@ -323,7 +323,6 @@ function mdaRowScore(row: { institution: string; website: string; addressContact
 
 export async function searchMdaDirectory(
   query: string,
-  options: { maxResults?: number } = {},
 ): Promise<MdaSource[]> {
   const phrases = expandedMdaPhrases(query);
   if (phrases.length === 0) return [];
