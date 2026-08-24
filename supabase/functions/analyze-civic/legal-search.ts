@@ -37,6 +37,10 @@ export type MdaSource = {
   website: string | null;
   addressContact: string | null;
   category: string;
+  mandate: string;
+  aliases: string[];
+  issueTerms: string[];
+  jurisdiction: "federal" | "state" | "local" | "national";
   sourcePath: string;
   matchStrength: "strong" | "moderate";
   excerpt: string;
@@ -229,37 +233,101 @@ function parseMdaRows(directory: string): Array<{ institution: string; website: 
     if (heading && !/^\d+\.$/.test(heading[2].trim())) category = heading[2].trim();
     const match = line.match(rowPattern);
     if (!match) continue;
-    let institution = match[1].replace(/\s+/g, " ").trim();
-    const website = match[2].trim() === "—" ? "—" : match[2].trim();
+    const institution = match[1].replace(/\s+/g, " ").trim();
+    const website = match[2].trim();
     const addressParts = [match[3].replace(/\s+/g, " ").trim()];
 
-    // The PDF conversion wraps institution names and address/contact values.
-    // Preserve both until the next row or category heading.
+    // Preserve wrapped address/contact lines until the next row or heading.
     let continuationIndex = index + 1;
     while (continuationIndex < lines.length) {
       const continuation = lines[continuationIndex].trim();
       if (!continuation) break;
       if (/^\d{1,2}\.\s+/.test(continuation) || rowPattern.test(lines[continuationIndex])) break;
       if (/^(?:NIGERIA|Compiled|Institution|Website|Address \/ Contact|Contents)$/i.test(continuation)) break;
-
-      // Uppercase/title-case continuation lines from the PDF may belong to either
-      // the institution name or the address/contact cell. Preserve the text rather
-      // than trying to guess which column it came from.
       addressParts.push(continuation.replace(/\s+/g, " "));
       continuationIndex += 1;
     }
 
     if (!institution || institution.toLowerCase() === "institution") continue;
-    rows.push({
-      institution,
-      website,
-      addressContact: addressParts.filter(Boolean).join(" ").trim(),
-      category,
-      lineIndex: index,
-    });
+    rows.push({ institution, website, addressContact: addressParts.filter(Boolean).join(" ").trim(), category, lineIndex: index });
   }
 
   return rows;
+}
+
+const MANDATE_PROFILES: Array<{
+  pattern: RegExp;
+  mandate: string;
+  aliases: string[];
+  issueTerms: string[];
+}> = [
+  {
+    pattern: /nigeria police force|\bnpf\b/i,
+    mandate: "Police protection, crime prevention, criminal investigation, arrest, and public safety.",
+    aliases: ["NPF", "police", "police station", "criminal investigation"],
+    issueTerms: ["police", "crime", "criminal", "robbery", "theft", "assault", "kidnapping", "investigation", "police brutality", "emergency", "cybercrime"],
+  },
+  {
+    pattern: /police service commission|\bpsc\b/i,
+    mandate: "Oversight, discipline, and complaints concerning members of the Nigeria Police Force.",
+    aliases: ["PSC", "police oversight", "police discipline"],
+    issueTerms: ["police misconduct", "discipline", "unlawful conduct", "complaint against officer", "police oversight"],
+  },
+  {
+    pattern: /economic and financial crimes commission|\befcc\b/i,
+    mandate: "Investigation and prosecution of economic and financial crimes.",
+    aliases: ["EFCC", "financial crime", "economic crime"],
+    issueTerms: ["fraud", "bribery", "corruption", "money laundering", "financial crime", "economic crime"],
+  },
+  {
+    pattern: /independent corrupt practices|\bicpc\b/i,
+    mandate: "Prevention, investigation, and prosecution of corrupt practices and abuse of office.",
+    aliases: ["ICPC", "corruption", "abuse of office"],
+    issueTerms: ["corruption", "bribery", "abuse of office", "public official"],
+  },
+  {
+    pattern: /national agency for food and drug|\bnafdac\b/i,
+    mandate: "Regulation and control of food, drugs, medical products, and related consumer health products.",
+    aliases: ["NAFDAC", "fake drug", "food safety"],
+    issueTerms: ["fake drug", "counterfeit medicine", "medicine", "food safety", "drug", "medical product"],
+  },
+  {
+    pattern: /federal road safety|\bfrsc\b/i,
+    mandate: "Road safety administration, traffic enforcement, and road-transport safety.",
+    aliases: ["FRSC", "road safety", "traffic"],
+    issueTerms: ["road safety", "traffic", "driver", "vehicle", "road accident", "checkpoint"],
+  },
+  {
+    pattern: /national human rights commission|\bnhrc\b/i,
+    mandate: "Protection, promotion, and investigation of human-rights violations.",
+    aliases: ["NHRC", "human rights", "rights violation"],
+    issueTerms: ["human rights", "torture", "unlawful detention", "discrimination", "rights violation"],
+  },
+];
+
+function authorityProfile(institution: string, category: string): { mandate: string; aliases: string[]; issueTerms: string[] } {
+  const profile = MANDATE_PROFILES.find((item) => item.pattern.test(institution));
+  if (profile) return profile;
+  return {
+    mandate: `${category || "Public institution"} responsibilities as described by the Nigerian MDA directory.`,
+    aliases: [],
+    issueTerms: [category, institution].filter(Boolean),
+  };
+}
+
+function authorityScore(source: MdaSource, query: string): number {
+  const value = normalize(query);
+  const terms = [...source.aliases, ...source.issueTerms, source.institution, source.category]
+    .map(normalize)
+    .filter((term) => term.length >= 3);
+  let score = 0;
+  for (const term of terms) {
+    if (term.includes(" ") ? value.includes(term) : value.split(" ").includes(term)) {
+      score += source.issueTerms.includes(term) ? 12 : 8;
+    }
+  }
+  if (source.mandate && source.issueTerms.some((term) => value.includes(normalize(term)))) score += 10;
+  return score;
 }
 
 function mdaRowScore(row: { institution: string; website: string; addressContact: string; category: string }, phrases: string[]): number {
@@ -286,18 +354,29 @@ export async function searchMdaDirectory(
     .sort((a, b) => b.score - a.score)
     .slice(0, options.maxResults ?? MAX_MDA_RESULTS);
 
-  return matches.map(({ row, score }) => {
+  const sources = matches.map(({ row, score }) => {
     const excerpt = lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 4)).join("\n").trim();
-    return {
+    const profile = authorityProfile(row.institution, row.category);
+    const source: MdaSource = {
       institution: row.institution,
       website: row.website === "—" ? null : row.website,
       addressContact: row.addressContact || null,
       category: row.category,
+      mandate: profile.mandate,
+      aliases: profile.aliases,
+      issueTerms: profile.issueTerms,
+      jurisdiction: /state/i.test(row.category) ? "state" : "federal",
       sourcePath: MDA_DIRECTORY_PATH,
       matchStrength: score >= 5 ? "strong" : "moderate",
       excerpt: excerpt.slice(0, 2400),
     };
+    return source;
   });
+
+  return sources
+    .map((source) => ({ source, authorityScore: authorityScore(source, query) }))
+    .sort((a, b) => b.authorityScore - a.authorityScore)
+    .map(({ source }) => source);
 }
 
 export function formatMdaSources(sources: MdaSource[]): string {
@@ -305,6 +384,7 @@ export function formatMdaSources(sources: MdaSource[]): string {
   return sources.map((source, index) => [
     `[MDA source ${index + 1} — ${source.matchStrength} match] ${source.institution}`,
     `Category: ${source.category || "Not specified in directory"}`,
+    `Mandate: ${source.mandate}`,
     `Website: ${source.website === "—" ? "Not listed" : source.website}`,
     `Address / Contact: ${source.addressContact || "Not listed"}`,
     `Directory source: ${MDA_SOURCE_LABEL}`,
