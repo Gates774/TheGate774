@@ -18,7 +18,9 @@ const MAX_RESULTS = 8;
 const MAX_EXCERPT_CHARS = 7000;
 const MAX_EXCERPT_WINDOWS = 3;
 const WINDOW_CHARS = 2200;
-const REQUEST_TIMEOUT_MS = 7000;
+const REQUEST_TIMEOUT_MS = 12000;
+const MAX_FETCH_RETRIES = 2; // total attempts = 1 + MAX_FETCH_RETRIES
+const RETRY_BACKOFF_MS = 400;
 
 export type LegalSource = {
   shortId: string;
@@ -146,7 +148,7 @@ function parseCsv(csv: string): MetadataRow[] {
   }).filter((row) => row.short_id && row.text_path);
 }
 
-async function fetchText(url: string): Promise<string> {
+async function fetchTextOnce(url: string): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -154,11 +156,27 @@ async function fetchText(url: string): Promise<string> {
       signal: controller.signal,
       headers: { Accept: "text/plain" },
     });
-    if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status}`);
+    if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status} for ${url}`);
     return await response.text();
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function fetchText(url: string): Promise<string> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_FETCH_RETRIES; attempt += 1) {
+    try {
+      return await fetchTextOnce(url);
+    } catch (error) {
+      lastError = error;
+      console.warn(`fetchText attempt ${attempt + 1}/${MAX_FETCH_RETRIES + 1} failed for ${url}`, error);
+      if (attempt < MAX_FETCH_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
 }
 
 async function loadMdaCsv(): Promise<string> {
