@@ -8,6 +8,7 @@ const LEGAL_REPO_NAME = "TheGate774";
 const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
 const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
+const MDA_CSV_PATH = "laws/mda/nigeria-mda-directory.csv";
 const MDA_SOURCE_LABEL = "Nigerian MDA directory";
 const MAX_MDA_RESULTS = 6;
 const MAX_MDA_CONTEXT_CHARS = 12000;
@@ -62,6 +63,7 @@ type FetchedRow = ScoredRow & { text: string; textScore: number };
 
 let metadataPromise: Promise<MetadataRow[]> | undefined;
 let mdaDirectoryPromise: Promise<string> | undefined;
+let mdaCsvPromise: Promise<string> | undefined;
 
 function libraryPath(path: string): string {
   const cleanPath = path.replace(/^\/+/, "");
@@ -158,6 +160,41 @@ async function fetchText(url: string): Promise<string> {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function loadMdaCsv(): Promise<string> {
+  if (!mdaCsvPromise) {
+    mdaCsvPromise = fetchText(rawUrl(MDA_CSV_PATH)).catch((error) => {
+      mdaCsvPromise = undefined;
+      throw error;
+    });
+  }
+  return mdaCsvPromise;
+}
+
+function parseMdaCsv(csv: string): MdaSource[] {
+  const lines = csv.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = csvFields(lines[0]);
+  return lines.slice(1).map((line) => {
+    const values = csvFields(line);
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => { row[header.trim()] = values[index] ?? ""; });
+    const profile = authorityProfile(row.institution ?? "", row.category ?? "");
+    return {
+      institution: row.institution?.trim() || "—",
+      website: row.website?.trim() && row.website.trim() !== "—" ? row.website.trim() : null,
+      addressContact: row.address_contact?.trim() && row.address_contact.trim() !== "—" ? row.address_contact.trim() : null,
+      category: row.category?.trim() || "Uncategorized",
+      mandate: profile.mandate,
+      aliases: profile.aliases,
+      issueTerms: profile.issueTerms,
+      jurisdiction: /state/i.test(row.category ?? "") ? "state" : "federal",
+      sourcePath: row.source_file?.trim() || MDA_CSV_PATH,
+      matchStrength: "moderate" as const,
+      excerpt: [row.institution, row.website, row.address_contact, row.category].filter(Boolean).join(" | "),
+    };
+  }).filter((source) => source.institution !== "—");
 }
 
 async function loadMetadata(): Promise<MetadataRow[]> {
@@ -345,38 +382,41 @@ export async function searchMdaDirectory(
 ): Promise<MdaSource[]> {
   const phrases = expandedMdaPhrases(query);
   if (phrases.length === 0) return [];
-  const directory = await loadMdaDirectory();
-  const lines = directory.replace(/\r/g, "").split("\n");
-  const rows = parseMdaRows(directory);
-  const matches = rows
-    .map((row) => ({ row, score: mdaRowScore(row, phrases) }))
+
+  let sources: MdaSource[];
+  try {
+    sources = parseMdaCsv(await loadMdaCsv());
+  } catch (error) {
+    console.warn("MDA CSV unavailable; falling back to text directory", error);
+    const directory = await loadMdaDirectory();
+    const lines = directory.replace(/\r/g, "").split("\n");
+    const rows = parseMdaRows(directory);
+    sources = rows.map((row) => {
+      const profile = authorityProfile(row.institution, row.category);
+      return {
+        institution: row.institution, website: row.website === "—" ? null : row.website,
+        addressContact: row.addressContact || null, category: row.category,
+        mandate: profile.mandate, aliases: profile.aliases, issueTerms: profile.issueTerms,
+        jurisdiction: /state/i.test(row.category) ? "state" : "federal",
+        sourcePath: MDA_DIRECTORY_PATH, matchStrength: "moderate",
+        excerpt: lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 5)).join("\n").trim().slice(0, 2400),
+      };
+    });
+  }
+
+  const queryText = normalize(query);
+  return sources
+    .map((source) => {
+      const searchable = normalize([source.institution, source.website ?? "", source.addressContact ?? "", source.category, source.mandate, ...source.aliases, ...source.issueTerms].join(" "));
+      let score = 0;
+      for (const phrase of phrases) if (searchable.includes(normalize(phrase))) score += phrase.includes(" ") ? 4 : 1;
+      score += authorityScore(source, queryText);
+      return { source, score };
+    })
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, options.maxResults ?? MAX_MDA_RESULTS);
-
-  const sources = matches.map(({ row, score }) => {
-    const excerpt = lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 4)).join("\n").trim();
-    const profile = authorityProfile(row.institution, row.category);
-    const source: MdaSource = {
-      institution: row.institution,
-      website: row.website === "—" ? null : row.website,
-      addressContact: row.addressContact || null,
-      category: row.category,
-      mandate: profile.mandate,
-      aliases: profile.aliases,
-      issueTerms: profile.issueTerms,
-      jurisdiction: /state/i.test(row.category) ? "state" : "federal",
-      sourcePath: MDA_DIRECTORY_PATH,
-      matchStrength: score >= 5 ? "strong" : "moderate",
-      excerpt: excerpt.slice(0, 2400),
-    };
-    return source;
-  });
-
-  return sources
-    .map((source) => ({ source, authorityScore: authorityScore(source, query) }))
-    .sort((a, b) => b.authorityScore - a.authorityScore)
-    .map(({ source }) => source);
+    .slice(0, options.maxResults ?? MAX_MDA_RESULTS)
+    .map(({ source, score }) => ({ ...source, matchStrength: score >= 8 ? "strong" : "moderate" as const }));
 }
 
 export function formatMdaSources(sources: MdaSource[]): string {
@@ -387,7 +427,7 @@ export function formatMdaSources(sources: MdaSource[]): string {
     `Mandate: ${source.mandate}`,
     `Website: ${source.website === "—" ? "Not listed" : source.website}`,
     `Address / Contact: ${source.addressContact || "Not listed"}`,
-    `Directory source: ${MDA_SOURCE_LABEL}`,
+    `Directory source: ${source.sourcePath}`,
     `Directory passage: ${source.excerpt}`,
   ].join("\n")).join("\n\n---\n\n");
 }
