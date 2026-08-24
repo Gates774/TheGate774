@@ -578,6 +578,18 @@ function formatToday() {
   });
 }
 
+/** Extract a labelled segment (e.g. "Website: ...") from the compact MDA submission block returned in analysis.mda. Returns undefined when the label is absent. */
+function extractMdaField(mda: string | undefined, labels: string[]): string | undefined {
+  if (!mda) return undefined;
+  for (const part of mda.split(/;\s*/)) {
+    for (const label of labels) {
+      const match = part.match(new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[:\\u2014-]\\s*(.+)$`, "i"));
+      if (match) return match[1].trim();
+    }
+  }
+  return undefined;
+}
+
 export function ComplaintReportCard({
   analysis,
   eyebrow = "Civic Action Brief",
@@ -717,16 +729,37 @@ export function ComplaintReportCard({
         {(analysis.mda || analysis.contact || analysis.rationale) && (
           <Section label="03 — Where to submit this report" icon={Building2}>
             <div className="space-y-4">
+              {(analysis.mda || analysis.contact) && (() => {
+                const institution = extractMdaField(analysis.mda, ["Primary institution", "Institution"]);
+                const website = extractMdaField(analysis.mda, ["Website"]) ?? analysis.contact;
+                const address = extractMdaField(analysis.mda, ["Address / Contact", "Address", "Contact"]);
+                return (
+                  <dl className="space-y-3">
+                    {institution && (
+                      <div>
+                        <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Institution</dt>
+                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{institution}</dd>
+                      </div>
+                    )}
+                    {website && (
+                      <div>
+                        <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Website</dt>
+                        <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">{website}</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Address / Contact</dt>
+                      <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">
+                        {address ?? "Not provided in the returned analysis data."}
+                      </dd>
+                    </div>
+                  </dl>
+                );
+              })()}
               {analysis.mda && (
                 <div>
-                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Institution</p>
+                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Full MDA directory entry</p>
                   <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.mda}</p>
-                </div>
-              )}
-              {analysis.contact && (
-                <div>
-                  <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Website / Address / Contact</p>
-                  <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.contact}</p>
                 </div>
               )}
               {!analysis.mda && !analysis.contact && analysis.rationale && (
