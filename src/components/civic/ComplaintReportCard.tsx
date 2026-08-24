@@ -65,8 +65,8 @@ const LEGAL_REPO_OWNER = "Gates774";
 const LEGAL_REPO_NAME = "TheGate774";
 const LEGAL_BRANCH = "main";
 const METADATA_PATH = "laws/metadata_github.csv";
-const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.txt";
-const MAX_MDA_RESULTS = 6;
+const MDA_DIRECTORY_PATH = "laws/mda/nigeria-mda-directory.csv";
+const MAX_MDA_RESULTS = 1;
 const MAX_MDA_CONTEXT_CHARS = 12000;
 
 const MAX_METADATA_CANDIDATES = 32;
@@ -334,7 +334,7 @@ export async function searchMdaDirectory(
     .map((row) => ({ row, score: mdaRowScore(row, phrases) }))
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, options.maxResults ?? MAX_MDA_RESULTS);
+    .slice(0, 1);
 
   return matches.map(({ row, score }) => {
     const excerpt = lines.slice(Math.max(0, row.lineIndex - 1), Math.min(lines.length, row.lineIndex + 4)).join("\n").trim();
@@ -351,8 +351,9 @@ export async function searchMdaDirectory(
 }
 
 export function formatMdaSources(sources: MdaSource[]): string {
-  if (sources.length === 0) return "";
-  return sources.map((source, index) => [
+  const strongestSource = sources[0];
+  if (!strongestSource) return "";
+  return [strongestSource].map((source, index) => [
     `[MDA source ${index + 1} — ${source.matchStrength} match] ${source.institution}`,
     `Category: ${source.category || "Not specified in directory"}`,
     `Website: ${source.website === "—" ? "Not listed" : source.website}`,
@@ -815,7 +816,7 @@ export function ComplaintReportCard({
                   ))}
                 </div>
               )}
-              {analysis.mda && (
+              {analysis.mda && !analysis.submission_destination && (
                 <div>
                   <p className="text-[10.5px] uppercase tracking-[0.18em] text-foreground/50 font-semibold mb-1">Full MDA directory entry</p>
                   <p className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap">{analysis.mda}</p>
