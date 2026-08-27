@@ -71,9 +71,9 @@ export interface ComplaintAnalysis {
 const logo = gate774Logo.url;
 
 const TIER_META = {
-  federal: { label: "Federal Republic of Nigeria", short: "Federal", icon: Landmark },
+  federal: { label: "Federal Government", short: "Federal", icon: Landmark },
   state: { label: "State Government", short: "State", icon: Building2 },
-  local: { label: "Local Government Area", short: "LGA", icon: MapPin },
+  local: { label: "Local Government", short: "LGA", icon: MapPin },
 } as const;
 
 function makeRef(tier: string) {
@@ -338,11 +338,6 @@ export function ComplaintReportCard({
                       <dd className="text-[13px] sm:text-[14px] leading-[1.7] text-foreground/90 whitespace-pre-wrap break-words">{primaryAddress || "—"}</dd>
                     </div>
                   </dl>
-                  {destination?.why_relevant && (
-                    <p className="mt-4 pt-4 border-t border-foreground/10 text-[13px] leading-[1.7] text-foreground/80">
-                      {destination.why_relevant}
-                    </p>
-                  )}
               </div>
             </div>
           </Section>
