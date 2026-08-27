@@ -328,7 +328,10 @@ const MANDATE_PROFILES: Array<{
   excludeTerms?: string[];
 }> = [
   {
-    pattern: /federal competition and consumer protection commission|\bfccpc\b/i,
+    // Matches "and" or "&", and tolerates directory rows missing the trailing
+    // "Commission"/"(FCCPC)" words (a known data-corruption pattern where those
+    // words get wrapped into the address field instead of the institution field).
+    pattern: /federal competition (?:and|&) consumer protection(?: commission)?(?: \(fccpc\))?|\bfccpc\b/i,
     mandate: "Consumer protection, unfair trade practices, defective or misrepresented goods, and consumer complaints.",
     aliases: ["FCCPC", "consumer protection", "consumer complaint", "defective goods", "unfair trade"],
     issueTerms: ["consumer", "consumer complaint", "laptop", "computer", "goods", "product", "defective", "faulty", "misrepresented", "refund", "seller", "purchase", "warranty", "unfair trade", "price gouging"],
@@ -497,7 +500,7 @@ export async function searchMdaDirectory(
   }
 
   const queryText = normalize(query);
-  return sources
+  const scored = sources
     .map((source) => {
       const searchable = normalize([source.institution, source.website ?? "", source.addressContact ?? "", source.category, source.mandate, ...source.aliases, ...source.issueTerms].join(" "));
       let score = 0;
@@ -507,7 +510,25 @@ export async function searchMdaDirectory(
       const jurisdictionBonus = jurisdictionScore(source, queryText);
       return { source, score: score + jurisdictionBonus, routingScore };
     })
-    .filter(({ score, source }) => score > 0 && (!MANDATE_PROFILES.some((profile) => profile.pattern.test(source.institution)) || score >= 12))
+    .filter(({ score, source }) => score > 0 && (!MANDATE_PROFILES.some((profile) => profile.pattern.test(source.institution)) || score >= 12));
+
+  // The directory sometimes lists the same institution more than once (e.g. under two
+  // different chapter/category sections of the source document). Left as-is, two rows
+  // for the same real-world institution can occupy both the #1 and #2 ranking slots
+  // downstream, which makes the top-vs-second-place ambiguity check in index.ts
+  // (normalizeIssueDestination's scoreGap requirement) misfire and refuse to route a
+  // case that isn't actually ambiguous. Collapse to the single best-scoring row per
+  // institution before ranking so only genuinely different institutions can compete.
+  const bestByInstitution = new Map<string, (typeof scored)[number]>();
+  for (const entry of scored) {
+    const key = normalize(entry.source.institution);
+    const existing = bestByInstitution.get(key);
+    if (!existing || entry.score > existing.score || (entry.score === existing.score && entry.routingScore > existing.routingScore)) {
+      bestByInstitution.set(key, entry);
+    }
+  }
+
+  return [...bestByInstitution.values()]
     .sort((a, b) => b.score - a.score || a.source.institution.localeCompare(b.source.institution))
     .slice(0, Math.min(options.maxResults ?? MAX_MDA_RESULTS, MAX_MDA_RESULTS))
     .map(({ source, score, routingScore }) => ({ ...source, matchScore: score, routingScore, matchStrength: routingScore >= MIN_ROUTING_SCORE && score >= 20 ? "strong" : "moderate" as const }));

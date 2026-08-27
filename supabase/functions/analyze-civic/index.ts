@@ -505,10 +505,15 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         );
       }
 
+      // "THE GATE"/FG/26/8576 postmortem: responsible_authority and submission_destination
+      // used to be populated from two independent paths (the model's free-text guess vs.
+      // this function's deterministic directory ranking) and could silently disagree —
+      // e.g. a consumer-goods complaint whose "Responsible Authority" correctly said FCCPC
+      // while "Route to" said INEC, because the directory ranking picked a different
+      // institution than the model named. normalizeIssueDestination is now the single
+      // source of truth for BOTH fields whenever it produces or withholds a match, so the
+      // two fields can never diverge again.
       const normalizeIssueDestination = (issue: Record<string, unknown>, issueSources: Awaited<ReturnType<typeof searchMdaDirectory>>) => {
-        const destination = issue.submission_destination && typeof issue.submission_destination === "object"
-          ? issue.submission_destination as Record<string, unknown>
-          : undefined;
         const ranked = [...issueSources]
           .filter((source) => source.matchScore >= 12 && source.routingScore >= 25)
           .sort((a, b) => b.routingScore - a.routingScore || b.matchScore - a.matchScore || a.institution.localeCompare(b.institution));
@@ -518,6 +523,9 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         // The server selects only the deterministic top candidate from this issue's isolated set.
         const matched = top;
         const scoreGap = top && second ? top.routingScore - second.routingScore : Number.POSITIVE_INFINITY;
+        const existingAuthority = issue.responsible_authority && typeof issue.responsible_authority === "object"
+          ? issue.responsible_authority as Record<string, unknown>
+          : undefined;
         if (!matched || matched.routingScore < 25 || matched.matchScore < 12 || scoreGap < 25) {
           issue.mda = "";
           issue.contact = "";
@@ -527,6 +535,14 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
             address_contact: null,
             why_relevant: "No directory-backed institution was matched to this specific issue.",
             verification_note: "Do not submit until the responsible authority is verified.",
+          };
+          // Do not leave a model-guessed authority standing once its directory-backed
+          // destination has been withdrawn — an unmatched destination and a confidently
+          // named authority is exactly the inconsistent state this fix closes.
+          issue.responsible_authority = {
+            name: "",
+            tier: existingAuthority?.tier ?? issue.tier ?? "",
+            officer: "",
           };
           issue.confidence = "low";
           issue.routing_status = "needs_clarification";
@@ -542,6 +558,13 @@ Use the Civic Action Guide for civic routing and the retrieved law and MDA sourc
         };
         issue.contact = matched.website ?? matched.addressContact ?? "";
         issue.routing_status = "routed";
+        // Force responsible_authority to the same institution the citizen is being told
+        // to submit to, preserving only the model's officer/tier guess as supplementary detail.
+        issue.responsible_authority = {
+          name: matched.institution,
+          tier: existingAuthority?.tier ?? issue.tier ?? "federal",
+          officer: existingAuthority?.officer ?? "",
+        };
       };
 
       if (Array.isArray(report.issues)) {
